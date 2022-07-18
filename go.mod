@@ -1,6 +1,6 @@
 module github.com/okex/adventure
 
-go 1.14
+go 1.16
 
 require (
 	github.com/ethereum/go-ethereum v1.10.8
