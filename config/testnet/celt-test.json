@@ -23,7 +23,7 @@
     "http://18.178.138.1:26659"
   ],
   "SuperAcc": "e625169c97df687261267836e901413542514e7e4b464b882bdc58366384d24e",
-  "ContractPath": "./config/testnet/celt_contract_list_devnet.json",
+  "ContractPath": "./config/testnet/celt_contract_list_testnet.json",
   "WorkerPath": "./config/testnet/addr_20000_wmt",
   "ParaNum": 20,
   "SendOKTToWorker": true
