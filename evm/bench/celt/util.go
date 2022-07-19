@@ -40,20 +40,6 @@ func panicerr(err error) {
 	}
 }
 
-type SwapContract struct {
-	Token0          common.Address
-	Token1          common.Address
-	Token2          common.Address
-	Token3          common.Address
-	FakewethAddress common.Address
-	Factory         common.Address
-	Router          common.Address
-	Lp1             common.Address
-	Lp2             common.Address
-	StakingRewards1 common.Address
-	StakingRewards2 common.Address
-}
-
 func LoadContractList(file string) []CeltContract {
 	data, err := ioutil.ReadFile(file)
 	panicerr(err)
@@ -83,7 +69,6 @@ func SendTxs(client *ethclient.Client, txs []*types.Transaction) error {
 		cnt := 0
 		var err error
 		for cnt < 50 {
-			cnt++
 			if e := client.SendTransaction(context.Background(), v); e != nil {
 				fmt.Println("index", index, e)
 				err = e
@@ -92,7 +77,7 @@ func SendTxs(client *ethclient.Client, txs []*types.Transaction) error {
 				err = nil
 				break
 			}
-
+			cnt++
 		}
 		if err != nil {
 			return err

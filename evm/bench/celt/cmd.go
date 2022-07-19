@@ -32,25 +32,25 @@ func initClient(c *CeltConfig) {
 }
 
 func CeltRun() *cobra.Command {
-	var wmtCmd = &cobra.Command{
+	var celtCmd = &cobra.Command{
 		Use:   "celt",
 		Short: "celt run",
 		Args:  cobra.NoArgs,
-		Run:   wmtRun,
+		Run:   celtRun,
 	}
-	wmtCmd.Flags().StringVar(&configFile, "f", "", "the location of wmt config file")
-	return wmtCmd
+	celtCmd.Flags().StringVar(&configFile, "f", "", "the location of celt config file")
+	return celtCmd
 }
 
 func CeltInit() *cobra.Command {
-	var wmtCmd = &cobra.Command{
+	var celtCmd = &cobra.Command{
 		Use:   "celt-init",
 		Short: "celt init",
 		Args:  cobra.NoArgs,
-		Run:   wmtInit,
+		Run:   celtInit,
 	}
-	wmtCmd.Flags().StringVar(&configFile, "f", "", "the location of wmt config file")
-	return wmtCmd
+	celtCmd.Flags().StringVar(&configFile, "f", "", "the location of celt config file")
+	return celtCmd
 }
 
 func getM() *CeltManager {
@@ -58,22 +58,24 @@ func getM() *CeltManager {
 
 	abi_bin.InitBuilder()
 	initClient(c)
+
 	cList := LoadContractList(c.ContractPath)
 	clients := make([]*ethclient.Client, 0)
 	for _, v := range c.RPC {
-		c, err := ethclient.Dial(v)
+		client, err := ethclient.Dial(v)
 		panicerr(err)
-		clients = append(clients, c)
+		clients = append(clients, client)
 	}
 	superAcc := keyToAcc(c.SuperAcc)
+
 	return newManager(cList, superAcc, c.WorkerPath, c.ParaNum, clients, c.SendOKTToWorker)
 }
-func wmtRun(cmd *cobra.Command, args []string) {
+func celtRun(cmd *cobra.Command, args []string) {
 	m := getM()
 	m.Loop()
 }
 
-func wmtInit(cmd *cobra.Command, args []string) {
+func celtInit(cmd *cobra.Command, args []string) {
 	m := getM()
 	m.Init()
 }

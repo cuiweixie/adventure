@@ -5,16 +5,15 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"fmt"
-	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/okex/adventure/evm/bench/celt/abi_bin"
+	"github.com/petermattis/goid"
 	"io"
 	"log"
 	"math/big"
-	"math/rand"
 	"os"
 	"strings"
 	"sync"
@@ -123,8 +122,9 @@ func (m *CeltManager) Loop() {
 	workerIndex := 0
 
 	for index := 0; index < m.paraNum; index++ {
-		workIndexList := make([]int, 0)
-		for i := 0; i < len(m.worker)/m.paraNum; i++ {
+		groupSize := len(m.worker) / m.paraNum
+		workIndexList := make([]int, 0, groupSize)
+		for i := 0; i < groupSize; i++ {
 			workIndexList = append(workIndexList, workerIndex)
 			workerIndex++
 		}
@@ -143,35 +143,24 @@ var (
 	ether = new(big.Int).Mul(new(big.Int).SetInt64(1000000000), new(big.Int).SetInt64(1000000000))
 )
 
-func display(client *ethclient.Client, acc *acc, to common.Address, payload []byte) {
-	data, err := client.CallContract(context.Background(), ethereum.CallMsg{
-		From:     acc.ethAddress,
-		To:       &to,
-		Gas:      gasLimit,
-		GasPrice: gasPrice,
-		Data:     payload,
-	}, nil)
-	if err == nil {
-		fmt.Println("addr", acc.ethAddress.String(), "token balance", new(big.Int).SetBytes(data).String())
-	} else {
-		fmt.Println("err", err)
-	}
-}
-
 func (m *CeltManager) Init() {
 	m.TransferOKTToAccount()
+	fmt.Println("init mint")
 	if err := m.InitMint(); err != nil {
 		panic(err)
 	}
 
+	fmt.Println("init register")
 	if err := m.InitRegister(); err != nil {
 		panic(err)
 	}
 
+	fmt.Println("init approval for all")
 	if err := m.InitApprovalForAll(); err != nil {
 		panic(err)
 	}
 
+	fmt.Println("init stake")
 	if err := m.InitStake(); err != nil {
 		panic(err)
 	}
@@ -306,7 +295,6 @@ func (m *CeltManager) InitStake() error {
 func (m *CeltManager) runPool(workIndex int, contractIndex int) error {
 	account := m.worker[workIndex]
 	contract := m.contracList[contractIndex]
-	fmt.Println("run---", "workerIndex", workIndex, "contractIndex", contractIndex)
 
 	nonce := GetNonce(m.clientList[workIndex%len(m.clientList)], account.ecdsaPriv)
 	txList := make([]*types.Transaction, 0)
@@ -328,17 +316,16 @@ func (m *CeltManager) runPool(workIndex int, contractIndex int) error {
 
 func (m *CeltManager) run(tasks []int, contractIndex int) {
 
-	rand.Seed(time.Now().UnixNano())
-	sleepTime := rand.Intn(10)
-	time.Sleep(time.Duration(sleepTime) * time.Second)
-	turns := 0
+	//rand.Seed(time.Now().UnixNano())
+	//sleepTime := rand.Intn(10)
+	//time.Sleep(time.Duration(sleepTime) * time.Second)
+	goId := goid.Get()
 	for true {
 		for _, workIndex := range tasks {
-
+			fmt.Printf("goroutine %d run  workerIndex %d contractIndex %d\n", goId, contractIndex, contractIndex)
 			if err := m.runPool(workIndex, contractIndex); err != nil {
 				log.Println(err)
 			}
-			turns++
 		}
 	}
 }
