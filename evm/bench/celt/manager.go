@@ -322,7 +322,7 @@ func (m *CeltManager) run(tasks []int, contractIndex int) {
 	goId := goid.Get()
 	for true {
 		for _, workIndex := range tasks {
-			fmt.Printf("goroutine %d run  workerIndex %d contractIndex %d\n", goId, contractIndex, contractIndex)
+			fmt.Printf("goroutine %d run  workerIndex %d contractIndex %d\n", goId, workIndex, contractIndex)
 			if err := m.runPool(workIndex, contractIndex); err != nil {
 				log.Println(err)
 			}
