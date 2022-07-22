@@ -22,8 +22,8 @@
     "http://18.178.135.201:26659",
     "http://18.178.138.1:26659"
   ],
-  "SuperAcc": "e625169c97df687261267836e901413542514e7e4b464b882bdc58366384d24e",
-  "ContractPath": "./config/testnet/celt_contract_list_testnet.json",
+  "SuperAcc": "824c346a2b5fa81768c75408202493a9cb0a7f5879ff4988d23da2c6b1afb9cf",
+  "ContractPath": "./config/testnet/celt_cList_1.json",
   "WorkerPath": "./config/testnet/addr_20000_wmt",
   "ParaNum": 2000,
   "SendOKTToWorker": true

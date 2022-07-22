@@ -30,6 +30,11 @@ var (
 	LinearUnlockAbi string
 	//go:embed linearunlock_bin
 	LinearUnlockBin string
+
+	//go:embed celt_abi
+	CeltAbi string
+	//go:embed celt_bin
+	CeltBin string
 )
 
 var (
@@ -38,6 +43,7 @@ var (
 	NftPoolBuilder          utils.PayloadBuilder
 	InvitationCenterBuilder utils.PayloadBuilder
 	LinearUnlockBuilder     utils.PayloadBuilder
+	CeltBuilder             utils.PayloadBuilder
 )
 
 func InitBuilder() {
@@ -64,6 +70,11 @@ func InitBuilder() {
 	}
 
 	LinearUnlockBuilder, err = utils.NewPayloadBuilder(LinearUnlockBin, LinearUnlockAbi)
+	if err != nil {
+		panic(err)
+	}
+
+	CeltBuilder, err = utils.NewPayloadBuilder(CeltBin, CeltAbi)
 	if err != nil {
 		panic(err)
 	}

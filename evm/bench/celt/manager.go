@@ -14,6 +14,7 @@ import (
 	"io"
 	"log"
 	"math/big"
+	"math/rand"
 	"os"
 	"strings"
 	"sync"
@@ -38,6 +39,7 @@ type CeltContract struct {
 	NftPool          common.Address
 	LinearUnlock     common.Address
 	CeltManager      common.Address
+	Celt             common.Address
 }
 
 //
@@ -293,19 +295,14 @@ func (m *CeltManager) InitStake() error {
 }
 
 func (m *CeltManager) runPool(workIndex int, contractIndex int) error {
-	account := m.worker[workIndex]
-	contract := m.contracList[contractIndex]
-
-	nonce := GetNonce(m.clientList[workIndex%len(m.clientList)], account.ecdsaPriv)
 	txList := make([]*types.Transaction, 0)
 
-	// nftpool getRewardAndBonus
-	payload, err := abi_bin.NftPoolBuilder.Build("getRewardAndBonus")
+	tx, err := m.GetRandomTx(workIndex, contractIndex)
 	if err != nil {
 		return err
 	}
 
-	txList = append(txList, SignTxWithNonce(account.ecdsaPriv, contract.NftPool, payload, nonce))
+	txList = append(txList, tx)
 
 	if err := SendTxs(m.clientList[workIndex%len(m.clientList)], txList); err != nil {
 		return err
@@ -328,4 +325,67 @@ func (m *CeltManager) run(tasks []int, contractIndex int) {
 			}
 		}
 	}
+}
+
+func (m *CeltManager) GetRandomTx(workIndex int, contractIndex int) (*types.Transaction, error) {
+	account := m.worker[workIndex]
+	contract := m.contracList[contractIndex]
+	nonce := GetNonce(m.clientList[workIndex%len(m.clientList)], account.ecdsaPriv)
+
+	rand.Seed(time.Now().UnixNano())
+	random := rand.Intn(101)
+
+	if 1 <= random && random <= 47 {
+		fmt.Println(Func_GetRewardAndBonus)
+		return generateGetRewardAndBonusTx(account, contract.NftPool, nonce)
+	} else if 47 < random && random <= 60 {
+		fmt.Println(Func_GetReward)
+		return generateGetRewardTx(account, contract.NftPool, nonce)
+	} else {
+		fmt.Println(Func_Transfer)
+		random := rand.Intn(len(m.worker))
+		return generateTransferTx(account, &(m.worker[random].ethAddress), contract.Celt, nonce)
+	}
+
+	//if 0 <= random && random <= 38 {
+	//	return generateGetRewardAndBonusTx(account, contract.NftPool, nonce)
+	//} else if 38 < random && random <= 70 {
+	//	return Func_Transfer
+	//} else if 70 < random && random <= 80 {
+	//	return Func_GetReward
+	//} else if 80 < random && random <= 86 {
+	//	return Func_ContinueReforge
+	//} else {
+	//	return Func_Quit
+	//}
+}
+
+func generateGetRewardAndBonusTx(account *acc, contractAddress common.Address, nonce uint64) (*types.Transaction, error) {
+	// nftpool getRewardAndBonus
+	payload, err := abi_bin.NftPoolBuilder.Build("getRewardAndBonus")
+	if err != nil {
+		return nil, err
+	}
+
+	return SignTxWithNonce(account.ecdsaPriv, contractAddress, payload, nonce), nil
+}
+
+func generateGetRewardTx(account *acc, contractAddress common.Address, nonce uint64) (*types.Transaction, error) {
+	// nftpool getRewardAndBonus
+	payload, err := abi_bin.NftPoolBuilder.Build("getReward")
+	if err != nil {
+		return nil, err
+	}
+
+	return SignTxWithNonce(account.ecdsaPriv, contractAddress, payload, nonce), nil
+}
+
+func generateTransferTx(account *acc, receiver *common.Address, contractAddress common.Address, nonce uint64) (*types.Transaction, error) {
+	// nftpool getRewardAndBonus
+	payload, err := abi_bin.CeltBuilder.Build("transfer", receiver, big.NewInt(1))
+	if err != nil {
+		return nil, err
+	}
+
+	return SignTxWithNonce(account.ecdsaPriv, contractAddress, payload, nonce), nil
 }
