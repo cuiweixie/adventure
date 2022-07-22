@@ -336,13 +336,10 @@ func (m *CeltManager) GetRandomTx(workIndex int, contractIndex int) (*types.Tran
 	random := rand.Intn(101)
 
 	if 1 <= random && random <= 47 {
-		fmt.Println(Func_GetRewardAndBonus)
 		return generateGetRewardAndBonusTx(account, contract.NftPool, nonce)
 	} else if 47 < random && random <= 60 {
-		fmt.Println(Func_GetReward)
 		return generateGetRewardTx(account, contract.NftPool, nonce)
 	} else {
-		fmt.Println(Func_Transfer)
 		random := rand.Intn(len(m.worker))
 		return generateTransferTx(account, &(m.worker[random].ethAddress), contract.Celt, nonce)
 	}
