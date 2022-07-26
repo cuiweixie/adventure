@@ -387,8 +387,7 @@ func (m *CeltManager) GetRandomTx(workIndex int, contractIndex int) (*types.Tran
 		return generateGetRewardTx(account, contract.NftPool, nonce)
 	default:
 		random := rand.Intn(len(m.worker))
-		nonce = GetNonce(m.clientList[workIndex%len(m.clientList)], m.miner.ecdsaPriv)
-		return generateTransferTx(m.miner, &(m.worker[random].ethAddress), contract.Celt, nonce)
+		return generateTransferTx(account, &(m.worker[random].ethAddress), contract.Celt, nonce)
 	}
 
 	//random = rand.Intn(len(m.worker))
