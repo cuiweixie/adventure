@@ -150,20 +150,29 @@ var (
 
 func (m *CeltManager) Init() {
 	m.TransferOKTToAccount()
-	fmt.Println("init mint")
-	if err := m.InitMint(); err != nil {
-		panic(err)
-	}
+
+	time.Sleep(20 * time.Second)
 
 	fmt.Println("init register")
 	if err := m.InitRegister(); err != nil {
 		panic(err)
 	}
 
+	time.Sleep(20 * time.Second)
+
+	fmt.Println("init mint")
+	if err := m.InitMint(); err != nil {
+		panic(err)
+	}
+
+	time.Sleep(20 * time.Second)
+
 	fmt.Println("init approval for all")
 	if err := m.InitApprovalForAll(); err != nil {
 		panic(err)
 	}
+
+	time.Sleep(20 * time.Second)
 
 	fmt.Println("init stake")
 	if err := m.InitStake(); err != nil {
@@ -191,9 +200,9 @@ func (m *CeltManager) InitMint() error {
 	for _, contract := range m.contracList {
 		txList := make([]*types.Transaction, 0, len(m.worker)*2)
 		nonce := GetNonce(m.clientList[0], m.operator.ecdsaPriv)
-		for _, account := range m.worker {
+		for i, account := range m.worker {
 			// supreme mintSudo
-			payload, err := abi_bin.SurpemeBuilder.Build("mintSudo", account.ethAddress, big.NewInt(1))
+			payload, err := abi_bin.SurpemeBuilder.Build("mintSudo", account.ethAddress, big.NewInt(int64(i+1)))
 			if err != nil {
 				return err
 			}
@@ -205,7 +214,7 @@ func (m *CeltManager) InitMint() error {
 			if err != nil {
 				return err
 			}
-			txList = append(txList, SignTxWithNonce(m.operator.ecdsaPriv, contract.Supreme, payload, nonce))
+			txList = append(txList, SignTxWithNonce(m.operator.ecdsaPriv, contract.Common, payload, nonce))
 
 			nonce++
 		}
@@ -222,7 +231,8 @@ func (m *CeltManager) InitMint() error {
 func (m *CeltManager) InitRegister() error {
 	for _, contract := range m.contracList {
 		txList := make([]*types.Transaction, 0, len(m.worker))
-		for _, account := range m.worker {
+		for i := range m.worker {
+			account := m.worker[i]
 			nonce := GetNonce(m.clientList[0], account.ecdsaPriv)
 
 			// registerInviter
@@ -245,7 +255,8 @@ func (m *CeltManager) InitRegister() error {
 func (m *CeltManager) InitApprovalForAll() error {
 	for _, contract := range m.contracList {
 		txList := make([]*types.Transaction, 0, len(m.worker)*2)
-		for _, account := range m.worker {
+		for i := range m.worker {
+			account := m.worker[i]
 			nonce := GetNonce(m.clientList[0], account.ecdsaPriv)
 
 			// supreme setApprovalForAll
@@ -277,11 +288,10 @@ func (m *CeltManager) InitApprovalForAll() error {
 func (m *CeltManager) InitStake() error {
 	for _, contract := range m.contracList {
 		txList := make([]*types.Transaction, 0, len(m.worker))
-		for _, account := range m.worker {
+		for i, account := range m.worker {
 			nonce := GetNonce(m.clientList[0], account.ecdsaPriv)
-
-			// nftpool setApprovalForAll
-			payload, err := abi_bin.NftPoolBuilder.Build("stake", []*big.Int{big.NewInt(1)}, []*big.Int{big.NewInt(100)}, []*big.Int{big.NewInt(1)})
+			// nftpool stake
+			payload, err := abi_bin.NftPoolBuilder.Build("stake", []*big.Int{big.NewInt(1)}, []*big.Int{big.NewInt(100)}, []*big.Int{big.NewInt(int64(i + 1))})
 			if err != nil {
 				return err
 			}
