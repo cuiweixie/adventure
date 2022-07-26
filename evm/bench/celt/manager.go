@@ -351,20 +351,20 @@ func (m *CeltManager) GetRandomTx(workIndex int, contractIndex int) (*types.Tran
 	rand.Seed(time.Now().UnixNano())
 	random := rand.Intn(101)
 
-	switch {
-	case 1 <= random && random <= 47:
-		return generateGetRewardAndBonusTx(account, contract.NftPool, nonce)
-	case 47 < random && random <= 60:
-		return generateGetRewardTx(account, contract.NftPool, nonce)
-	default:
-		random := rand.Intn(len(m.worker))
-		nonce = GetNonce(m.clientList[workIndex%len(m.clientList)], m.miner.ecdsaPriv)
-		return generateTransferTx(m.miner, &(m.worker[random].ethAddress), contract.Celt, nonce)
-	}
+	//switch {
+	//case 1 <= random && random <= 47:
+	//	return generateGetRewardAndBonusTx(account, contract.NftPool, nonce)
+	//case 47 < random && random <= 60:
+	//	return generateGetRewardTx(account, contract.NftPool, nonce)
+	//default:
+	//	random := rand.Intn(len(m.worker))
+	//	nonce = GetNonce(m.clientList[workIndex%len(m.clientList)], m.miner.ecdsaPriv)
+	//	return generateTransferTx(m.miner, &(m.worker[random].ethAddress), contract.Celt, nonce)
+	//}
 
-	//random = rand.Intn(len(m.worker))
-	//nonce = GetNonce(m.clientList[workIndex%len(m.clientList)], m.miner.ecdsaPriv)
-	//return generateTransferTx(m.miner, &(m.worker[random].ethAddress), contract.Celt, nonce)
+	random = rand.Intn(len(m.worker))
+	nonce = GetNonce(m.clientList[workIndex%len(m.clientList)], m.miner.ecdsaPriv)
+	return generateTransferTx(m.miner, &(m.worker[random].ethAddress), contract.Celt, nonce)
 }
 
 func generateGetRewardAndBonusTx(account *acc, contractAddress common.Address, nonce uint64) (*types.Transaction, error) {
