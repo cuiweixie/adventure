@@ -381,7 +381,8 @@ func (m *CeltManager) GetRandomTx(workIndex int, contractIndex int) (*types.Tran
 
 	rand.Seed(time.Now().UnixNano())
 	random := rand.Intn(101)
-
+	//return generateGetRewardAndBonusTx(account, contract.NftPool, nonce)
+	////return generateGetRewardTx(account, contract.NftPool, nonce)
 	switch {
 	case 1 <= random && random <= 47:
 		return generateGetRewardAndBonusTx(account, contract.NftPool, nonce)

@@ -14,8 +14,8 @@ var (
 	chainID    = new(big.Int).SetUint64(65)
 	signer     = types.NewEIP155Signer(chainID)
 	gasPrice   = new(big.Int).SetUint64(1000000000)
-	//gasLimit   = uint64(3000000)
-	gasLimit = uint64(80000)
+	gasLimit   = uint64(3000000)
+	//gasLimit = uint64(80000)
 )
 
 func initClient(c *CeltConfig) {
