@@ -152,33 +152,38 @@ var (
 )
 
 func (m *CeltManager) Init() {
-	m.TransferOKTToAccount()
+	//m.TransferOKTToAccount()
+	//
+	//time.Sleep(60 * time.Second)
+	//
+	//fmt.Println("init register")
+	//if err := m.InitRegister(); err != nil {
+	//	panic(err)
+	//}
+	//
+	//time.Sleep(60 * time.Second)
+	//
+	//fmt.Println("init mint")
+	//if err := m.InitMint(); err != nil {
+	//	panic(err)
+	//}
+	//
+	//time.Sleep(60 * time.Second)
+	//
+	//fmt.Println("init approval for all")
+	//if err := m.InitApprovalForAll(); err != nil {
+	//	panic(err)
+	//}
+	//
+	//time.Sleep(60 * time.Second)
+	//
+	//fmt.Println("init stake")
+	//if err := m.InitStake(); err != nil {
+	//	panic(err)
+	//}
 
-	time.Sleep(60 * time.Second)
-
-	fmt.Println("init register")
-	if err := m.InitRegister(); err != nil {
-		panic(err)
-	}
-
-	time.Sleep(60 * time.Second)
-
-	fmt.Println("init mint")
-	if err := m.InitMint(); err != nil {
-		panic(err)
-	}
-
-	time.Sleep(60 * time.Second)
-
-	fmt.Println("init approval for all")
-	if err := m.InitApprovalForAll(); err != nil {
-		panic(err)
-	}
-
-	time.Sleep(60 * time.Second)
-
-	fmt.Println("init stake")
-	if err := m.InitStake(); err != nil {
+	fmt.Println("init celt transfer")
+	if err := m.InitCeltTransfer(); err != nil {
 		panic(err)
 	}
 }
@@ -218,6 +223,30 @@ func (m *CeltManager) InitMint() error {
 				return err
 			}
 			txList = append(txList, SignTxWithNonce(m.operator.ecdsaPriv, contract.Common, payload, nonce))
+
+			nonce++
+		}
+
+		// send txs
+		if err := SendTxs(m.clientList[0], txList); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *CeltManager) InitCeltTransfer() error {
+	for _, contract := range m.contracList {
+		txList := make([]*types.Transaction, 0, len(m.worker)*2)
+		nonce := GetNonce(m.clientList[0], m.miner.ecdsaPriv)
+		for _, account := range m.worker {
+			// celt transfer
+			payload, err := abi_bin.CeltBuilder.Build("transfer", account.ethAddress, big.NewInt(1000000000))
+			if err != nil {
+				return err
+			}
+			txList = append(txList, SignTxWithNonce(m.miner.ecdsaPriv, contract.Celt, payload, nonce))
 
 			nonce++
 		}
@@ -351,20 +380,20 @@ func (m *CeltManager) GetRandomTx(workIndex int, contractIndex int) (*types.Tran
 	rand.Seed(time.Now().UnixNano())
 	random := rand.Intn(101)
 
-	//switch {
-	//case 1 <= random && random <= 47:
-	//	return generateGetRewardAndBonusTx(account, contract.NftPool, nonce)
-	//case 47 < random && random <= 60:
-	//	return generateGetRewardTx(account, contract.NftPool, nonce)
-	//default:
-	//	random := rand.Intn(len(m.worker))
-	//	nonce = GetNonce(m.clientList[workIndex%len(m.clientList)], m.miner.ecdsaPriv)
-	//	return generateTransferTx(m.miner, &(m.worker[random].ethAddress), contract.Celt, nonce)
-	//}
+	switch {
+	case 1 <= random && random <= 47:
+		return generateGetRewardAndBonusTx(account, contract.NftPool, nonce)
+	case 47 < random && random <= 60:
+		return generateGetRewardTx(account, contract.NftPool, nonce)
+	default:
+		random := rand.Intn(len(m.worker))
+		nonce = GetNonce(m.clientList[workIndex%len(m.clientList)], m.miner.ecdsaPriv)
+		return generateTransferTx(m.miner, &(m.worker[random].ethAddress), contract.Celt, nonce)
+	}
 
-	random = rand.Intn(len(m.worker))
-	nonce = GetNonce(m.clientList[workIndex%len(m.clientList)], m.miner.ecdsaPriv)
-	return generateTransferTx(m.miner, &(m.worker[random].ethAddress), contract.Celt, nonce)
+	//random = rand.Intn(len(m.worker))
+	//nonce = GetNonce(m.clientList[workIndex%len(m.clientList)], m.miner.ecdsaPriv)
+	//return generateTransferTx(m.miner, &(m.worker[random].ethAddress), contract.Celt, nonce)
 }
 
 func generateGetRewardAndBonusTx(account *acc, contractAddress common.Address, nonce uint64) (*types.Transaction, error) {
