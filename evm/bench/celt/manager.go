@@ -25,6 +25,7 @@ import (
 type CeltConfig struct {
 	RPC             []string
 	ContractPath    string
+	Operator        string
 	SuperAcc        string
 	WorkerPath      string
 	ParaNum         int
@@ -53,17 +54,19 @@ type CeltManager struct {
 	clientList  []*ethclient.Client
 	contracList []CeltContract
 	superAcc    *acc
+	operator    *acc
 
 	worker          []*acc
 	paraNum         int
 	sendOKTToWorker bool
 }
 
-func newManager(cList []CeltContract, superAcc *acc, workPath string, paraNum int, clients []*ethclient.Client, sendOKTToWorker bool) *CeltManager {
+func newManager(cList []CeltContract, superAcc, operator *acc, workPath string, paraNum int, clients []*ethclient.Client, sendOKTToWorker bool) *CeltManager {
 	m := &CeltManager{
 		clientList:      clients,
 		contracList:     cList,
 		superAcc:        superAcc,
+		operator:        operator,
 		paraNum:         paraNum,
 		sendOKTToWorker: sendOKTToWorker,
 	}
@@ -187,14 +190,14 @@ func (m *CeltManager) TransferOKTToAccount() {
 func (m *CeltManager) InitMint() error {
 	for _, contract := range m.contracList {
 		txList := make([]*types.Transaction, 0, len(m.worker)*2)
-		nonce := GetNonce(m.clientList[0], m.superAcc.ecdsaPriv)
+		nonce := GetNonce(m.clientList[0], m.operator.ecdsaPriv)
 		for _, account := range m.worker {
 			// supreme mintSudo
 			payload, err := abi_bin.SurpemeBuilder.Build("mintSudo", account.ethAddress, big.NewInt(1))
 			if err != nil {
 				return err
 			}
-			txList = append(txList, SignTxWithNonce(m.superAcc.ecdsaPriv, contract.Supreme, payload, nonce))
+			txList = append(txList, SignTxWithNonce(m.operator.ecdsaPriv, contract.Supreme, payload, nonce))
 
 			// common mintSudo
 			nonce++
@@ -202,7 +205,7 @@ func (m *CeltManager) InitMint() error {
 			if err != nil {
 				return err
 			}
-			txList = append(txList, SignTxWithNonce(m.superAcc.ecdsaPriv, contract.Supreme, payload, nonce))
+			txList = append(txList, SignTxWithNonce(m.operator.ecdsaPriv, contract.Supreme, payload, nonce))
 
 			nonce++
 		}
@@ -273,7 +276,7 @@ func (m *CeltManager) InitApprovalForAll() error {
 
 func (m *CeltManager) InitStake() error {
 	for _, contract := range m.contracList {
-		txList := make([]*types.Transaction, 0, len(m.worker)*2)
+		txList := make([]*types.Transaction, 0, len(m.worker))
 		for _, account := range m.worker {
 			nonce := GetNonce(m.clientList[0], account.ecdsaPriv)
 

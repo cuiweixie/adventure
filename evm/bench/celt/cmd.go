@@ -67,8 +67,9 @@ func getM() *CeltManager {
 		clients = append(clients, client)
 	}
 	superAcc := keyToAcc(c.SuperAcc)
+	operator := keyToAcc(c.Operator)
 
-	return newManager(cList, superAcc, c.WorkerPath, c.ParaNum, clients, c.SendOKTToWorker)
+	return newManager(cList, superAcc, operator, c.WorkerPath, c.ParaNum, clients, c.SendOKTToWorker)
 }
 func celtRun(cmd *cobra.Command, args []string) {
 	m := getM()
