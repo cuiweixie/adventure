@@ -26,6 +26,7 @@ type CeltConfig struct {
 	RPC             []string
 	ContractPath    string
 	Operator        string
+	Miner           string
 	SuperAcc        string
 	WorkerPath      string
 	ParaNum         int
@@ -55,18 +56,20 @@ type CeltManager struct {
 	contracList []CeltContract
 	superAcc    *acc
 	operator    *acc
+	miner       *acc
 
 	worker          []*acc
 	paraNum         int
 	sendOKTToWorker bool
 }
 
-func newManager(cList []CeltContract, superAcc, operator *acc, workPath string, paraNum int, clients []*ethclient.Client, sendOKTToWorker bool) *CeltManager {
+func newManager(cList []CeltContract, superAcc, operator, miner *acc, workPath string, paraNum int, clients []*ethclient.Client, sendOKTToWorker bool) *CeltManager {
 	m := &CeltManager{
 		clientList:      clients,
 		contracList:     cList,
 		superAcc:        superAcc,
 		operator:        operator,
+		miner:           miner,
 		paraNum:         paraNum,
 		sendOKTToWorker: sendOKTToWorker,
 	}
@@ -145,34 +148,34 @@ func (m *CeltManager) Loop() {
 }
 
 var (
-	ether = new(big.Int).Mul(new(big.Int).SetInt64(1000000000), new(big.Int).SetInt64(1000000000))
+	ether = new(big.Int).Mul(new(big.Int).SetInt64(1000000000), new(big.Int).SetInt64(5000000000))
 )
 
 func (m *CeltManager) Init() {
 	m.TransferOKTToAccount()
 
-	time.Sleep(20 * time.Second)
+	time.Sleep(60 * time.Second)
 
 	fmt.Println("init register")
 	if err := m.InitRegister(); err != nil {
 		panic(err)
 	}
 
-	time.Sleep(20 * time.Second)
+	time.Sleep(60 * time.Second)
 
 	fmt.Println("init mint")
 	if err := m.InitMint(); err != nil {
 		panic(err)
 	}
 
-	time.Sleep(20 * time.Second)
+	time.Sleep(60 * time.Second)
 
 	fmt.Println("init approval for all")
 	if err := m.InitApprovalForAll(); err != nil {
 		panic(err)
 	}
 
-	time.Sleep(20 * time.Second)
+	time.Sleep(60 * time.Second)
 
 	fmt.Println("init stake")
 	if err := m.InitStake(); err != nil {
@@ -355,20 +358,13 @@ func (m *CeltManager) GetRandomTx(workIndex int, contractIndex int) (*types.Tran
 		return generateGetRewardTx(account, contract.NftPool, nonce)
 	default:
 		random := rand.Intn(len(m.worker))
-		return generateTransferTx(account, &(m.worker[random].ethAddress), contract.Celt, nonce)
+		nonce = GetNonce(m.clientList[workIndex%len(m.clientList)], m.miner.ecdsaPriv)
+		return generateTransferTx(m.miner, &(m.worker[random].ethAddress), contract.Celt, nonce)
 	}
 
-	//if 0 <= random && random <= 38 {
-	//	return generateGetRewardAndBonusTx(account, contract.NftPool, nonce)
-	//} else if 38 < random && random <= 70 {
-	//	return Func_Transfer
-	//} else if 70 < random && random <= 80 {
-	//	return Func_GetReward
-	//} else if 80 < random && random <= 86 {
-	//	return Func_ContinueReforge
-	//} else {
-	//	return Func_Quit
-	//}
+	//random = rand.Intn(len(m.worker))
+	//nonce = GetNonce(m.clientList[workIndex%len(m.clientList)], m.miner.ecdsaPriv)
+	//return generateTransferTx(m.miner, &(m.worker[random].ethAddress), contract.Celt, nonce)
 }
 
 func generateGetRewardAndBonusTx(account *acc, contractAddress common.Address, nonce uint64) (*types.Transaction, error) {
@@ -392,7 +388,7 @@ func generateGetRewardTx(account *acc, contractAddress common.Address, nonce uin
 }
 
 func generateTransferTx(account *acc, receiver *common.Address, contractAddress common.Address, nonce uint64) (*types.Transaction, error) {
-	// nftpool getRewardAndBonus
+	// celt transfer
 	payload, err := abi_bin.CeltBuilder.Build("transfer", receiver, big.NewInt(1))
 	if err != nil {
 		return nil, err

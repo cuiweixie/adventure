@@ -14,7 +14,8 @@ var (
 	chainID    = new(big.Int).SetUint64(65)
 	signer     = types.NewEIP155Signer(chainID)
 	gasPrice   = new(big.Int).SetUint64(1000000000)
-	gasLimit   = uint64(3000000)
+	//gasLimit   = uint64(3000000)
+	gasLimit = uint64(80000)
 )
 
 func initClient(c *CeltConfig) {
@@ -68,8 +69,9 @@ func getM() *CeltManager {
 	}
 	superAcc := keyToAcc(c.SuperAcc)
 	operator := keyToAcc(c.Operator)
+	miner := keyToAcc(c.Miner)
 
-	return newManager(cList, superAcc, operator, c.WorkerPath, c.ParaNum, clients, c.SendOKTToWorker)
+	return newManager(cList, superAcc, operator, miner, c.WorkerPath, c.ParaNum, clients, c.SendOKTToWorker)
 }
 func celtRun(cmd *cobra.Command, args []string) {
 	m := getM()
