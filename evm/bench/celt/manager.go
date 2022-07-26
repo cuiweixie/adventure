@@ -152,35 +152,37 @@ var (
 )
 
 func (m *CeltManager) Init() {
-	//m.TransferOKTToAccount()
-	//
-	//time.Sleep(60 * time.Second)
-	//
-	//fmt.Println("init register")
-	//if err := m.InitRegister(); err != nil {
-	//	panic(err)
-	//}
-	//
-	//time.Sleep(60 * time.Second)
-	//
-	//fmt.Println("init mint")
-	//if err := m.InitMint(); err != nil {
-	//	panic(err)
-	//}
-	//
-	//time.Sleep(60 * time.Second)
-	//
-	//fmt.Println("init approval for all")
-	//if err := m.InitApprovalForAll(); err != nil {
-	//	panic(err)
-	//}
-	//
-	//time.Sleep(60 * time.Second)
-	//
-	//fmt.Println("init stake")
-	//if err := m.InitStake(); err != nil {
-	//	panic(err)
-	//}
+	m.TransferOKTToAccount()
+
+	time.Sleep(60 * time.Second)
+
+	fmt.Println("init register")
+	if err := m.InitRegister(); err != nil {
+		panic(err)
+	}
+
+	time.Sleep(60 * time.Second)
+
+	fmt.Println("init mint")
+	if err := m.InitMint(); err != nil {
+		panic(err)
+	}
+
+	time.Sleep(60 * time.Second)
+
+	fmt.Println("init approval for all")
+	if err := m.InitApprovalForAll(); err != nil {
+		panic(err)
+	}
+
+	time.Sleep(60 * time.Second)
+
+	fmt.Println("init stake")
+	if err := m.InitStake(); err != nil {
+		panic(err)
+	}
+
+	time.Sleep(60 * time.Second)
 
 	fmt.Println("init celt transfer")
 	if err := m.InitCeltTransfer(); err != nil {
@@ -386,13 +388,12 @@ func (m *CeltManager) GetRandomTx(workIndex int, contractIndex int) (*types.Tran
 	case 47 < random && random <= 60:
 		return generateGetRewardTx(account, contract.NftPool, nonce)
 	default:
-		random := rand.Intn(len(m.worker))
+		random = rand.Intn(len(m.worker))
+		if m.worker[random].ethAddress.String() == account.ethAddress.String() {
+			random = rand.Intn(len(m.worker) / 2)
+		}
 		return generateTransferTx(account, &(m.worker[random].ethAddress), contract.Celt, nonce)
 	}
-
-	//random = rand.Intn(len(m.worker))
-	//nonce = GetNonce(m.clientList[workIndex%len(m.clientList)], m.miner.ecdsaPriv)
-	//return generateTransferTx(m.miner, &(m.worker[random].ethAddress), contract.Celt, nonce)
 }
 
 func generateGetRewardAndBonusTx(account *acc, contractAddress common.Address, nonce uint64) (*types.Transaction, error) {

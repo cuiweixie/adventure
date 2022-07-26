@@ -66,6 +66,7 @@ func keyToAcc(key string) *acc {
 
 func SendTxs(client *ethclient.Client, txs []*types.Transaction) error {
 	for index, v := range txs {
+		//fmt.Println(v.Hash())
 		cnt := 0
 		var err error
 		for cnt < 50 {
