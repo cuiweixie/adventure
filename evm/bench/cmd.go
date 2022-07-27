@@ -1,6 +1,7 @@
 package bench
 
 import (
+	"github.com/okex/adventure/evm/bench/celt"
 	multiwmt "github.com/okex/adventure/evm/bench/multi-wmt"
 	"github.com/okex/adventure/evm/bench/operate"
 	"github.com/okex/adventure/evm/bench/query"
@@ -29,6 +30,8 @@ func BenchCmd() *cobra.Command {
 		scenario.ScenarioCmd(),
 		transfer.TxRpcCmd(),
 		transfer.TxRlpEncode(),
+		celt.CeltInit(),
+		celt.CeltRun(),
 	)
 
 	cmd.PersistentFlags().IntP(constant.FlagConcurrency, "c", 1, "The number of fixed goroutines that need to be set")
