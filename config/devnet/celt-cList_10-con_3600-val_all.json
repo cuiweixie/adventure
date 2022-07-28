@@ -24,6 +24,7 @@
     "http://34.218.198.69:26659",
     "http://34.218.198.69:36659"
   ],
+  "Miner": "4df96825c4c5ab850828bb300d9d3cea63e5e2183def9a716eccd4776abc0f49",
   "Operator": "d579321b80612ff82b91f45b944153067611a2b7af36527a76dd6ff7c8de1b31",
   "SuperAcc": "824c346a2b5fa81768c75408202493a9cb0a7f5879ff4988d23da2c6b1afb9cf",
   "ContractPath": "./config/devnet/celt-cList_10.json",
