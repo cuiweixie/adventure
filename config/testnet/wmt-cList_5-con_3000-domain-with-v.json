@@ -1,0 +1,15 @@
+{
+  "RPC": [
+    "https://exchaintestrpc.okex.org",
+    "http://54.150.103.141:26659",
+    "http://54.249.243.203:26659",
+    "http://18.177.169.67:26659",
+    "http://35.72.103.57:26659",
+    "http://18.178.126.121:26659",
+    "http://44.237.38.31:26659"
+  ],
+  "SuperAcc": "8ff3ca2d9985c3a52b459e2f6e7822b23e1af845961e22128d5f372fb9aa5f17",
+  "ContractPath": "./config/testnet/cList_5.json",
+  "WorkerPath": "./test/addr_20000_wmt",
+  "ParaNum": 3000
+}
