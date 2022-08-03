@@ -25,10 +25,35 @@ type acc struct {
 	ethAddress common.Address
 }
 
+type nonceManager struct {
+	mu sync.Mutex
+	mp map[common.Address]uint64
+}
+
+func (n *nonceManager) addrSize() int {
+	n.mu.Lock()
+
+	defer n.mu.Unlock()
+	return len(n.mp)
+}
+
+func (n *nonceManager) setNonce(addr common.Address, nonce uint64) {
+	n.mu.Lock()
+	n.mp[addr] = nonce
+	n.mu.Unlock()
+}
+func (n *nonceManager) getNonce(addr common.Address) uint64 {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+	nonce := n.mp[addr]
+	return nonce
+}
+
 type wmtManager struct {
 	clientList  []*ethclient.Client
 	contracList []SwapContract
 	superAcc    *acc
+	nonceM      *nonceManager
 
 	worker          []*acc
 	paraNum         int
@@ -42,10 +67,34 @@ func newManager(cList []SwapContract, superAcc *acc, workPath string, paraNum in
 		superAcc:        superAcc,
 		paraNum:         paraNum,
 		sendOKTToWorker: sendOKTToWorker,
+		nonceM: &nonceManager{
+			mu: sync.Mutex{},
+			mp: make(map[common.Address]uint64),
+		},
 	}
 	m.prePareWorker(workPath)
 	m.displayDetail()
+	m.initNonce()
 	return m
+}
+
+func (m *wmtManager) initNonce() {
+	fmt.Println("init nonce start , please wait")
+	var wg sync.WaitGroup
+	for _, v := range m.worker {
+		v := v
+		wg.Add(1)
+		go func() {
+			nonce := GetNonce(m.clientList[0], v.ecdsaPriv)
+			m.nonceM.setNonce(v.ethAddress, nonce)
+			wg.Done()
+			if m.nonceM.addrSize()%200 == 0 {
+				fmt.Println("workerSize", len(m.worker), "have init", m.nonceM.addrSize())
+			}
+		}()
+	}
+	wg.Wait()
+	fmt.Println("init nonce end ", "workerSize", len(m.worker), "nonceManagerAddr", m.nonceM.addrSize())
 }
 
 func (m *wmtManager) displayDetail() {
@@ -106,11 +155,10 @@ func (m *wmtManager) Loop() {
 			workerIndex++
 		}
 
-		contractIndex := index % len(m.contracList)
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			m.run(workIndexList, contractIndex)
+			m.run(workIndexList)
 		}()
 	}
 	wg.Wait()
@@ -194,9 +242,11 @@ func (m *wmtManager) randomContract() int {
 	return rand.Intn(5)
 }
 
-func (m *wmtManager) runPool(poolIndex int, workIndex int, contractIndex int, getReward bool) error {
+func (m *wmtManager) runPool(poolIndex int, workIndex int, getReward bool) error {
+	contractIndex := workIndex % len(m.contracList)
 	a := m.worker[workIndex]
 	c := m.contracList[contractIndex]
+
 	fmt.Println("run---", "workerIndex", workIndex, "contractIndex", contractIndex)
 
 	token0 := c.Token0
@@ -211,9 +261,9 @@ func (m *wmtManager) runPool(poolIndex int, workIndex int, contractIndex int, ge
 		stakeRewards = c.StakingRewards2
 	}
 
-	nonce := GetNonce(m.clientList[workIndex%len(m.clientList)], a.ecdsaPriv)
 	txList := make([]*types.Transaction, 0)
 
+	nonce := m.nonceM.getNonce(a.ethAddress)
 	// approve token0
 	payload, err := erc20Builder.Build("approve", c.Router, new(big.Int).SetInt64(1000))
 	panicerr(err)
@@ -229,7 +279,7 @@ func (m *wmtManager) runPool(poolIndex int, workIndex int, contractIndex int, ge
 	panicerr(err)
 	txList = append(txList, SignTxWithNonce(a.ecdsaPriv, c.Router, payload, nonce))
 	nonce++
-	
+
 	// approve token1 (for addLiquidity)
 	payload, err = erc20Builder.Build("approve", c.Router, new(big.Int).SetInt64(30))
 	panicerr(err)
@@ -279,10 +329,11 @@ func (m *wmtManager) runPool(poolIndex int, workIndex int, contractIndex int, ge
 	}
 
 	time.Sleep(2 * time.Second)
+	m.nonceM.setNonce(a.ethAddress, nonce)
 	return nil
 }
 
-func (m *wmtManager) run(tasks []int, contractIndex int) {
+func (m *wmtManager) run(tasks []int) {
 
 	rand.Seed(time.Now().UnixNano())
 	sleepTime := rand.Intn(10)
@@ -291,13 +342,13 @@ func (m *wmtManager) run(tasks []int, contractIndex int) {
 	for true {
 		for _, workIndex := range tasks {
 			getReward := turns%2 == 1
-			if err := m.runPool(0, workIndex, contractIndex, getReward); err != nil {
-				fmt.Println("runErr-0", workIndex, contractIndex, err)
+			if err := m.runPool(0, workIndex, getReward); err != nil {
+				fmt.Println("runErr-0", workIndex, err)
 				continue
 			}
 
-			if err := m.runPool(1, workIndex, contractIndex, getReward); err != nil {
-				fmt.Println("runErr-1", workIndex, contractIndex, err)
+			if err := m.runPool(1, workIndex, getReward); err != nil {
+				fmt.Println("runErr-1", workIndex, err)
 				continue
 			}
 
