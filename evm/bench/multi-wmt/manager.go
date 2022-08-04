@@ -4,16 +4,18 @@ import (
 	"bufio"
 	"context"
 	"crypto/ecdsa"
+	"encoding/json"
 	"fmt"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/rpc"
 	"io"
+	"io/ioutil"
 	"math/big"
 	"math/rand"
+	"net/http"
 	"os"
 	"strings"
 	"sync"
@@ -52,7 +54,7 @@ func (n *nonceManager) getNonce(addr common.Address) uint64 {
 
 type okcClient struct {
 	*ethclient.Client
-	rpc *rpc.Client
+	rpc string
 }
 
 type MempoolResult struct {
@@ -63,9 +65,22 @@ type MempoolResult struct {
 
 func (okc *okcClient) GetMempoolSize() int {
 	var result MempoolResult
-	err := okc.rpc.CallContext(context.Background(), &result, "num_unconfirmed_txs")
+	response, err := http.Get(fmt.Sprintf("%s/num_unconfirmed_txs", okc.rpc))
 	if err != nil {
-		fmt.Println()
+		fmt.Println(err)
+		return 0
+	}
+
+	bts, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		fmt.Println(bts)
+		return 0
+	}
+
+	err = json.Unmarshal(bts, &result)
+	if err != nil {
+		fmt.Println(err)
+		return 0
 	}
 
 	return result.Txs
