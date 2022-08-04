@@ -3,6 +3,7 @@ package multiwmt
 import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/spf13/cobra"
 	"math/big"
 )
@@ -54,14 +55,20 @@ func getM() *wmtManager {
 	initBuilder()
 	initClient(c)
 	cList := LoadContractList(c.ContractPath)
-	clients := make([]*ethclient.Client, 0)
-	for _, v := range c.RPC {
-		c, err := ethclient.Dial(v)
+	clients := make([]*okcClient, 0)
+	for i, v := range c.RPC {
+		client, err := ethclient.Dial(v)
 		panicerr(err)
-		clients = append(clients, c)
+		rest, err := rpc.Dial(c.Rest[i])
+		panicerr(err)
+
+		clients = append(clients, &okcClient{
+			Client: client,
+			rpc:    rest,
+		})
 	}
 	superAcc := keyToAcc(c.SuperAcc)
-	return newManager(cList, superAcc, c.WorkerPath, c.ParaNum, clients, c.SendOKTToWorker)
+	return newManager(cList, superAcc, c.WorkerPath, c.ParaNum, clients, c.SendOKTToWorker, c.Threshold)
 }
 func wmtRun(cmd *cobra.Command, args []string) {
 	m := getM()

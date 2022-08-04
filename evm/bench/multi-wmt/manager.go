@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/rpc"
 	"io"
 	"math/big"
 	"math/rand"
@@ -49,8 +50,29 @@ func (n *nonceManager) getNonce(addr common.Address) uint64 {
 	return nonce
 }
 
+type okcClient struct {
+	*ethclient.Client
+	rpc *rpc.Client
+}
+
+type MempoolResult struct {
+	Txs        int `json:"n_txs"`
+	Total      int `json:"total"`
+	TotalBytes int `json:"total_bytes"`
+}
+
+func (okc *okcClient) GetMempoolSize() int {
+	var result MempoolResult
+	err := okc.rpc.CallContext(context.Background(), &result, "num_unconfirmed_txs")
+	if err != nil {
+		fmt.Println()
+	}
+
+	return result.Txs
+}
+
 type wmtManager struct {
-	clientList  []*ethclient.Client
+	clientList  []*okcClient
 	contracList []SwapContract
 	superAcc    *acc
 	nonceM      *nonceManager
@@ -58,15 +80,17 @@ type wmtManager struct {
 	worker          []*acc
 	paraNum         int
 	sendOKTToWorker bool
+	threshold       int
 }
 
-func newManager(cList []SwapContract, superAcc *acc, workPath string, paraNum int, clients []*ethclient.Client, sendOKTToWorker bool) *wmtManager {
+func newManager(cList []SwapContract, superAcc *acc, workPath string, paraNum int, clients []*okcClient, sendOKTToWorker bool, threshold int) *wmtManager {
 	m := &wmtManager{
 		clientList:      clients,
 		contracList:     cList,
 		superAcc:        superAcc,
 		paraNum:         paraNum,
 		sendOKTToWorker: sendOKTToWorker,
+		threshold:       threshold,
 		nonceM: &nonceManager{
 			mu: sync.Mutex{},
 			mp: make(map[common.Address]uint64),
@@ -120,7 +144,7 @@ func (m *wmtManager) prePareWorker(path string) {
 	m.worker = accList
 }
 
-func GetNonce(client *ethclient.Client, privateKey *ecdsa.PrivateKey) uint64 {
+func GetNonce(client *okcClient, privateKey *ecdsa.PrivateKey) uint64 {
 	publicKey := privateKey.Public()
 	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
 	if !ok {
@@ -180,7 +204,7 @@ var (
 	ether = new(big.Int).Mul(new(big.Int).SetInt64(1000000000), new(big.Int).SetInt64(1000000000))
 )
 
-func display(client *ethclient.Client, acc *acc, to common.Address, payload []byte) {
+func display(client *okcClient, acc *acc, to common.Address, payload []byte) {
 	data, err := client.CallContract(context.Background(), ethereum.CallMsg{
 		From:     acc.ethAddress,
 		To:       &to,
@@ -246,6 +270,11 @@ func (m *wmtManager) runPool(poolIndex int, workIndex int, getReward bool) error
 	contractIndex := workIndex % len(m.contracList)
 	a := m.worker[workIndex]
 	c := m.contracList[contractIndex]
+
+	if m.clientList[workIndex%len(m.clientList)].GetMempoolSize() > m.threshold {
+		fmt.Println("达到阈值，sleep")
+		time.Sleep(1 * time.Second)
+	}
 
 	fmt.Println("run---", "workerIndex", workIndex, "contractIndex", contractIndex)
 
