@@ -17,6 +17,7 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -57,14 +58,18 @@ type okcClient struct {
 	rpc string
 }
 
+type rpcResult struct {
+	Result MempoolResult `json:"result"`
+}
 type MempoolResult struct {
-	Txs        int `json:"n_txs"`
-	Total      int `json:"total"`
-	TotalBytes int `json:"total_bytes"`
+	Txs        string `json:"n_txs"`
+	Total      string `json:"total"`
+	TotalBytes string `json:"total_bytes"`
 }
 
 func (okc *okcClient) GetMempoolSize() int {
-	var result MempoolResult
+
+	var result rpcResult
 	response, err := http.Get(fmt.Sprintf("%s/num_unconfirmed_txs", okc.rpc))
 	if err != nil {
 		fmt.Println(err)
@@ -73,7 +78,7 @@ func (okc *okcClient) GetMempoolSize() int {
 
 	bts, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		fmt.Println(bts)
+		fmt.Println(err)
 		return 0
 	}
 
@@ -83,7 +88,9 @@ func (okc *okcClient) GetMempoolSize() int {
 		return 0
 	}
 
-	return result.Txs
+	fmt.Println("mempool size :", result.Result.Total)
+	total, _ := strconv.Atoi(result.Result.Total)
+	return total
 }
 
 type wmtManager struct {
