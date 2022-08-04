@@ -3,7 +3,6 @@ package multiwmt
 import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/spf13/cobra"
 	"math/big"
 )
@@ -59,10 +58,9 @@ func getM() *wmtManager {
 	for i, v := range c.RPC {
 		client, err := ethclient.Dial(v)
 		panicerr(err)
-		r, err := rpc.Dial(c.Node[i])
 		clients = append(clients, &okcClient{
 			Client: client,
-			rpc:    r,
+			rpc:    c.Node[i],
 		})
 	}
 	superAcc := keyToAcc(c.SuperAcc)
