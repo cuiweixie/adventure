@@ -50,5 +50,5 @@
   "WorkerPath": "/Users/finefine/workspace/ok/adventure/config/devnet/addr_20000_wmt",
   "ParaNum": 3000,
   "SendOKTToWorker": false,
-  "Threshold": 18000
+  "Threshold": 18
 }
