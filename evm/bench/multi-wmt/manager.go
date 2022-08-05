@@ -4,16 +4,18 @@ import (
 	"bufio"
 	"context"
 	"crypto/ecdsa"
+	"encoding/json"
 	"fmt"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/rpc"
 	"io"
+	"io/ioutil"
 	"math/big"
 	"math/rand"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -54,9 +56,12 @@ func (n *nonceManager) getNonce(addr common.Address) uint64 {
 
 type okcClient struct {
 	*ethclient.Client
-	rpc *rpc.Client
+	rpc string
 }
 
+type rpcResult struct {
+	Result MempoolResult `json:"result"`
+}
 type MempoolResult struct {
 	Txs        string `json:"n_txs"`
 	Total      string `json:"total"`
@@ -65,15 +70,27 @@ type MempoolResult struct {
 
 func (okc *okcClient) GetMempoolSize() int {
 
-	var result MempoolResult
-	err := okc.rpc.Call(&result, "num_unconfirmed_txs")
+	var result rpcResult
+	response, err := http.Get(fmt.Sprintf("%s/num_unconfirmed_txs", okc.rpc))
 	if err != nil {
 		fmt.Println(err)
 		return 0
 	}
 
-	fmt.Println("mempool size :", result.Total)
-	total, _ := strconv.Atoi(result.Total)
+	bts, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		fmt.Println(err)
+		return 0
+	}
+
+	err = json.Unmarshal(bts, &result)
+	if err != nil {
+		fmt.Println(err)
+		return 0
+	}
+
+	fmt.Println("mempool size :", result.Result.Total)
+	total, _ := strconv.Atoi(result.Result.Total)
 	return total
 }
 
