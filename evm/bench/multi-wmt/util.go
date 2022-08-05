@@ -108,7 +108,7 @@ func SendTxs(client *okcClient, txs []*types.Transaction) error {
 
 type wmtConfig struct {
 	RPC             []string
-	Rest            []string
+	Node            []string
 	ContractPath    string
 	SuperAcc        string
 	WorkerPath      string

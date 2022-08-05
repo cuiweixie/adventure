@@ -4,18 +4,16 @@ import (
 	"bufio"
 	"context"
 	"crypto/ecdsa"
-	"encoding/json"
 	"fmt"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/rpc"
 	"io"
-	"io/ioutil"
 	"math/big"
 	"math/rand"
-	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -30,8 +28,9 @@ type acc struct {
 }
 
 type nonceManager struct {
-	mu sync.Mutex
-	mp map[common.Address]uint64
+	mu     sync.Mutex
+	mp     map[common.Address]uint64
+	nonces []uint64
 }
 
 func (n *nonceManager) addrSize() int {
@@ -55,12 +54,9 @@ func (n *nonceManager) getNonce(addr common.Address) uint64 {
 
 type okcClient struct {
 	*ethclient.Client
-	rpc string
+	rpc *rpc.Client
 }
 
-type rpcResult struct {
-	Result MempoolResult `json:"result"`
-}
 type MempoolResult struct {
 	Txs        string `json:"n_txs"`
 	Total      string `json:"total"`
@@ -69,27 +65,15 @@ type MempoolResult struct {
 
 func (okc *okcClient) GetMempoolSize() int {
 
-	var result rpcResult
-	response, err := http.Get(fmt.Sprintf("%s/num_unconfirmed_txs", okc.rpc))
+	var result MempoolResult
+	err := okc.rpc.Call(&result, "num_unconfirmed_txs")
 	if err != nil {
 		fmt.Println(err)
 		return 0
 	}
 
-	bts, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		fmt.Println(err)
-		return 0
-	}
-
-	err = json.Unmarshal(bts, &result)
-	if err != nil {
-		fmt.Println(err)
-		return 0
-	}
-
-	fmt.Println("mempool size :", result.Result.Total)
-	total, _ := strconv.Atoi(result.Result.Total)
+	fmt.Println("mempool size :", result.Total)
+	total, _ := strconv.Atoi(result.Total)
 	return total
 }
 
@@ -294,8 +278,8 @@ func (m *wmtManager) runPool(poolIndex int, workIndex int, getReward bool) error
 	c := m.contracList[contractIndex]
 
 	if m.clientList[workIndex%len(m.clientList)].GetMempoolSize() > m.threshold {
-		fmt.Println("达到阈值，sleep")
-		time.Sleep(1 * time.Second)
+		fmt.Println("达到阈值")
+		return nil
 	}
 
 	fmt.Println("run---", "workerIndex", workIndex, "contractIndex", contractIndex)
