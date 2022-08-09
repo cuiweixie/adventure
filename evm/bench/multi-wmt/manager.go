@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"io"
 	"io/ioutil"
+	"math"
 	"math/big"
 	"math/rand"
 	"net/http"
@@ -69,6 +70,10 @@ type MempoolResult struct {
 }
 
 func (okc *okcClient) GetMempoolSize() int {
+
+	if okc.rpc == "" {
+		return math.MaxInt
+	}
 
 	var result rpcResult
 	response, err := http.Get(fmt.Sprintf("%s/num_unconfirmed_txs", okc.rpc))
