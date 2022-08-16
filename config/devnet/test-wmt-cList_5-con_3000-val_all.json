@@ -22,7 +22,7 @@
     "http://34.218.198.69:26659",
     "http://34.218.198.69:36659"
   ],
-  "Rest": [
+  "Node": [
     "http://44.236.71.233:26657",
     "http://3.113.237.222:26657",
     "http://3.113.237.222:36657",
@@ -50,5 +50,5 @@
   "WorkerPath": "/Users/finefine/workspace/ok/adventure/config/devnet/addr_20000_wmt",
   "ParaNum": 3000,
   "SendOKTToWorker": false,
-  "Threshold": 18
+  "Threshold": 180000
 }
