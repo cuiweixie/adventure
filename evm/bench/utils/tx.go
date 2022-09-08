@@ -3,11 +3,14 @@ package utils
 import (
 	"crypto/ecdsa"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"
+	"io/ioutil"
 	"log"
 	"math/big"
+	"net/http"
 	"strconv"
 	"strings"
 	"sync"
@@ -27,26 +30,26 @@ type TxParam struct {
 }
 
 var (
-	lstTxHash = make([]string, 0)
-	duration	int64
-	ratio		float32
-	tps			int64
+	lstTxHash    = make([]string, 0)
+	duration     int64
+	ratio        float32
+	tps          int64
 	lstRlpEncode = make([]string, 0)
-	chainId		 = new(big.Int).SetUint64(65)
+	chainId      = new(big.Int).SetUint64(65)
 	signer       = types.NewLondonSigner(chainId)
-
 )
+
 /**
 作用：用来计算并发携程一次发送完毕后的的成功率
- */
-func GetTxTpsAndSuccessRatio(lstTxHash []string, cocurrent int64)(ratio float32, tps int64){
+*/
+func GetTxTpsAndSuccessRatio(lstTxHash []string, cocurrent int64) (ratio float32, tps int64) {
 	num := len(lstTxHash)
-	ratio = float32(num)/float32(cocurrent)
-	tps = int64(num*1000)/duration
+	ratio = float32(num) / float32(cocurrent)
+	tps = int64(num*1000) / duration
 	return
 }
 
-func getTxHashList(gIndex int, cli client.Client, acc *EthAccount, e func(ethcmm.Address) []TxParam) ([]string){
+func getTxHashList(gIndex int, cli client.Client, acc *EthAccount, e func(ethcmm.Address) []TxParam) []string {
 	acc.Lock()
 	defer acc.Unlock()
 
@@ -79,7 +82,7 @@ func getTxHashList(gIndex int, cli client.Client, acc *EthAccount, e func(ethcmm
 
 /**
 功能：获取返回所有账户的rlpencode
- */
+*/
 func getTxRlpEncodeList(cli client.Client, acc *EthAccount, e func(ethcmm.Address) []TxParam) {
 	caller := common.GetEthAddressFromPK(acc.GetPrivateKey())
 	if err := acc.SetNonce(cli); err != nil {
@@ -97,12 +100,13 @@ func getTxRlpEncodeList(cli client.Client, acc *EthAccount, e func(ethcmm.Addres
 	}
 	//return lstRlpEncode
 }
+
 /**
 功能：获取到单个交易的rlpencode
- */
-func GetEthTxRlpEncode(pk *ecdsa.PrivateKey, nonce uint64, to ethcmm.Address, amount *big.Int, gaslimit uint64, gasprice *big.Int, data []byte)(string, error){
+*/
+func GetEthTxRlpEncode(pk *ecdsa.PrivateKey, nonce uint64, to ethcmm.Address, amount *big.Int, gaslimit uint64, gasprice *big.Int, data []byte) (string, error) {
 	//make tx
-	unsignedTx := types.NewTransaction(nonce,to,amount,gaslimit,gasprice,data)
+	unsignedTx := types.NewTransaction(nonce, to, amount, gaslimit, gasprice, data)
 
 	//sign tx
 	signedTx, err := types.SignTx(unsignedTx, signer, pk)
@@ -120,7 +124,7 @@ func RunTxGetRlpEncodeList(p BasepParam, e func(ethcmm.Address) []TxParam) {
 	clients := client.GenerateClients(p.ips)    // generate CosmosClient or EthClient
 	accounts := generateAccounts(p.privateKeys) // generate accounts
 
-	for j := 0; j<len(accounts) ; j++ {
+	for j := 0; j < len(accounts); j++ {
 		acc := accounts[j]
 		cli := clients[0]
 		getTxRlpEncodeList(cli, acc, e)
@@ -141,10 +145,9 @@ func NewTxParam(to ethcmm.Address, amount *big.Int, gasLimit uint64, gasPrice *b
 	}
 }
 
-
 /**
 功能：获取同时并发的交易，收到tx时候花费的总时间，并统计成功率和tps
- */
+*/
 
 func RunTxRpc(p BasepParam, e func(ethcmm.Address) []TxParam) {
 	clients := client.GenerateClients(p.ips)    // generate CosmosClient or EthClient
@@ -156,7 +159,7 @@ func RunTxRpc(p BasepParam, e func(ethcmm.Address) []TxParam) {
 		wg.Add(1)
 		go func(gIndex int) {
 			//j<1是为了获取一次交易
-			for j := 0; j<1 ; j++ {
+			for j := 0; j < 1; j++ {
 				aIndex := (gIndex + j*p.concurrency) % len(accounts) // make sure accounts will be picked in order by round-robin
 				acc := accounts[aIndex]
 				cli := clients[aIndex%len(clients)]
@@ -170,7 +173,7 @@ func RunTxRpc(p BasepParam, e func(ethcmm.Address) []TxParam) {
 	wg.Wait()
 	duration = time.Since(startTime).Milliseconds()
 	elapsed := strconv.FormatInt(time.Since(startTime).Milliseconds(), 10) + "ms"
-	ratio, tps = GetTxTpsAndSuccessRatio(lstTxHash,int64(p.concurrency))
+	ratio, tps = GetTxTpsAndSuccessRatio(lstTxHash, int64(p.concurrency))
 	log.Printf(" %d tx sent and received txhash and total time cost: %s\n", p.concurrency, elapsed)
 	log.Printf(" %d tx send success, and sucess ratio is : %d, and tx tps is : %d\n", len(lstTxHash), ratio, tps)
 }
@@ -185,9 +188,15 @@ func RunTxs(p BasepParam, e func(ethcmm.Address) []TxParam) {
 				aIndex := (gIndex + j*p.concurrency) % len(accounts) // make sure accounts will be picked in order by round-robin
 				acc := accounts[aIndex]
 				cli := clients[aIndex%len(clients)]
+				ip := p.ips[aIndex%len(clients)]
+				rpc := strings.Replace(ip, "26659", "26657", 1)
+
+				if getMempoolSize(rpc) > p.threshold {
+					fmt.Println("达到阈值")
+					return
+				}
 
 				execute(gIndex, cli, acc, e)
-				//time.Sleep(time.Millisecond * time.Duration(p.sleep))
 			}
 		}(i)
 	}
@@ -195,7 +204,42 @@ func RunTxs(p BasepParam, e func(ethcmm.Address) []TxParam) {
 	select {}
 }
 
+type rpcResult struct {
+	Result MempoolResult `json:"result"`
+}
+type MempoolResult struct {
+	Txs        string `json:"n_txs"`
+	Total      string `json:"total"`
+	TotalBytes string `json:"total_bytes"`
+}
+
+func getMempoolSize(rpc string) int {
+	var result rpcResult
+	response, err := http.Get(fmt.Sprintf("%s/num_unconfirmed_txs", rpc))
+	if err != nil {
+		fmt.Println(err)
+		return 0
+	}
+
+	bts, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		fmt.Println(err)
+		return 0
+	}
+
+	err = json.Unmarshal(bts, &result)
+	if err != nil {
+		fmt.Println(err)
+		return 0
+	}
+
+	fmt.Println("mempool size :", result.Result.Total)
+	total, _ := strconv.Atoi(result.Result.Total)
+	return total
+}
+
 func execute(gIndex int, cli client.Client, acc *EthAccount, e func(ethcmm.Address) []TxParam) {
+
 	acc.Lock()
 	defer acc.Unlock()
 
@@ -223,4 +267,3 @@ func execute(gIndex int, cli client.Client, acc *EthAccount, e func(ethcmm.Addre
 		}
 	}
 }
-

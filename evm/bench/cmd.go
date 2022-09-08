@@ -40,5 +40,6 @@ func BenchCmd() *cobra.Command {
 	viper.BindPFlag(constant.FlagSleep, cmd.PersistentFlags().Lookup(constant.FlagSleep))
 	cmd.PersistentFlags().StringP(constant.FlagPrivateKeyFile, "p", "", "The filepath of private keys")
 	viper.BindPFlag(constant.FlagPrivateKeyFile, cmd.PersistentFlags().Lookup(constant.FlagPrivateKeyFile))
+	cmd.PersistentFlags().IntP(constant.FlagThreshold, "r", 1, "Mempool Threshold")
 	return cmd
 }

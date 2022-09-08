@@ -4,6 +4,7 @@ import (
 	"github.com/okex/adventure/common"
 	"github.com/okex/adventure/evm/constant"
 	"github.com/spf13/viper"
+	"math"
 )
 
 type BasepParam struct {
@@ -12,18 +13,25 @@ type BasepParam struct {
 	ips         []string
 
 	privateKeys []string
+	threshold   int
 }
 
-func NewBaseParam(sleep int, concurrency int, ips []string, privateKeyFile string) BasepParam {
+func NewBaseParam(sleep int, concurrency int, ips []string, privateKeyFile string, threshold int) BasepParam {
 	privateKeys := constant.PrivateKeys
 	if privateKeyFile != "" {
 		privateKeys = common.ReadDataFromFile(privateKeyFile)
 	}
+
+	if threshold == 0 {
+		threshold = math.MaxInt
+	}
+
 	return BasepParam{
 		sleep,
 		concurrency,
 		ips,
 		privateKeys,
+		threshold,
 	}
 }
 
@@ -33,6 +41,7 @@ func DefaultBaseParamFromFlag() BasepParam {
 		viper.GetInt(constant.FlagConcurrency),
 		viper.GetStringSlice(constant.FlagIPs),
 		viper.GetString(constant.FlagPrivateKeyFile),
+		viper.GetInt(constant.FlagThreshold),
 	)
 }
 
@@ -50,4 +59,8 @@ func (bParam BasepParam) GetIPs() []string {
 
 func (bParam BasepParam) GetPrivateKeys() []string {
 	return bParam.privateKeys
+}
+
+func (bParam BasepParam) GetThreshold() int {
+	return bParam.threshold
 }
