@@ -10,7 +10,6 @@ import (
 	"github.com/okex/adventure/evm/config"
 	"io/ioutil"
 	"log"
-	"math"
 	"math/big"
 	"net/http"
 	"strconv"
@@ -193,7 +192,7 @@ func RunTxs(p BasepParam, e func(ethcmm.Address) []TxParam) {
 				cli := clients[aIndex%len(clients)]
 				tendermintUrl := config.TransferCfg.Rpc[aIndex%len(clients)]
 
-				if config.TransferCfg.Threshold < math.MaxInt && getMempoolSize(tendermintUrl) > config.TransferCfg.Threshold {
+				if config.TransferCfg.Threshold > 0 && getMempoolSize(tendermintUrl) > config.TransferCfg.Threshold {
 					fmt.Println("达到阈值")
 					return
 				}
@@ -235,7 +234,7 @@ func getMempoolSize(tendermintUrl string) int {
 		return 0
 	}
 
-	fmt.Println("mempool size :", result.Result.Total)
+	//fmt.Println("mempool size :", result.Result.Total)
 	total, _ := strconv.Atoi(result.Result.Total)
 	return total
 }
@@ -253,18 +252,18 @@ func execute(gIndex int, cli client.Client, acc *EthAccount, e func(ethcmm.Addre
 
 	eParams := e(caller)
 	for _, eParam := range eParams {
-		txhash, err := cli.SendEthereumTx(acc.GetPrivateKey(), acc.GetNonce(), eParam.to, eParam.amount, eParam.gasLimit, eParam.gasPrice, eParam.data)
+		_, err := cli.SendEthereumTx(acc.GetPrivateKey(), acc.GetNonce(), eParam.to, eParam.amount, eParam.gasLimit, eParam.gasPrice, eParam.data)
 		if err != nil {
 			log.Printf("[g%d] %s send tx err: %s\n", gIndex, caller, err)
 			if strings.Contains(err.Error(), "already exists") {
 				acc.AddNonce()
 			} else if strings.Contains(err.Error(), "mempool is full") {
-				time.Sleep(time.Second)
+				//time.Sleep(time.Second)
 			} else if strings.Contains(err.Error(), "invalid nonce") {
 				acc.AddNonce()
 			}
 		} else {
-			log.Printf("[g%d] %s txhash: %s\n", gIndex, caller, txhash)
+			//log.Printf("[g%d] %s txhash: %s\n", gIndex, caller, txhash)
 			acc.AddNonce()
 		}
 	}
