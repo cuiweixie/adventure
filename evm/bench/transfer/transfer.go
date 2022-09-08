@@ -1,6 +1,8 @@
 package transfer
 
 import (
+	"encoding/json"
+	"errors"
 	ethcmm "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/okex/adventure/common"
@@ -11,12 +13,26 @@ import (
 	"github.com/okex/exchain/libs/tendermint/libs/rand"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"io/ioutil"
+	"os"
 )
 
 var (
 	// used for flags
-	fixed bool
+	fixed      bool
+	configPath string
+
+	TransferCfg TransferConfig
 )
+
+type TransferConfig struct {
+	Rpc              []string `json:"rpc"`
+	TenderMint       []string `json:"tenderMint"`
+	Concurrency      int      `json:"concurrency"`
+	Threshold        int      `json:"threshold"`
+	AccountsFilePath string   `json:"accountsFilePath"`
+	PrivateKeys      []string
+}
 
 func transfer(cmd *cobra.Command, args []string) {
 	amount := sdk.MustNewDecFromStr("0.00001").Int
@@ -24,6 +40,14 @@ func transfer(cmd *cobra.Command, args []string) {
 	var toAddrs []ethcmm.Address
 	if !fixed {
 		toAddrs = generateAddress()
+	}
+
+	if configPath == "" {
+		panic(errors.New("configPath must be not empty "))
+	}
+
+	if err := loadConfig(configPath); err != nil {
+		panic(err)
 	}
 
 	utils.RunTxs(
@@ -36,6 +60,29 @@ func transfer(cmd *cobra.Command, args []string) {
 			return []utils.TxParam{utils.NewTxParam(to, amount, 21000, evmtypes.DefaultGasPrice, nil)}
 		},
 	)
+}
+
+func loadConfig(configPath string) error {
+	file, err := os.Open(configPath)
+	if err != nil {
+		return err
+	}
+
+	data, err := ioutil.ReadAll(file)
+	if err != nil {
+		return err
+	}
+
+	defer file.Close()
+
+	if err := json.Unmarshal(data, &TransferCfg); err != nil {
+		return err
+	}
+
+	privateKeys := common.ReadDataFromFile(TransferCfg.AccountsFilePath)
+	TransferCfg.PrivateKeys = privateKeys
+
+	return nil
 }
 
 func generateAddress() []ethcmm.Address {
