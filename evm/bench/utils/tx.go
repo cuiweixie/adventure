@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"io/ioutil"
 	"log"
+	"math"
 	"math/big"
 	"net/http"
 	"strconv"
@@ -191,7 +192,7 @@ func RunTxs(p BasepParam, e func(ethcmm.Address) []TxParam) {
 				ip := p.ips[aIndex%len(clients)]
 				rpc := strings.Replace(ip, "26659", "26657", 1)
 
-				if getMempoolSize(rpc) > p.threshold {
+				if p.threshold < math.MaxInt && getMempoolSize(rpc) > p.threshold {
 					fmt.Println("达到阈值")
 					return
 				}
