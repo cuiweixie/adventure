@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/okex/adventure/evm/bench/transfer"
+	"github.com/okex/adventure/evm/config"
 	"io/ioutil"
 	"log"
 	"math"
@@ -181,19 +181,19 @@ func RunTxRpc(p BasepParam, e func(ethcmm.Address) []TxParam) {
 }
 
 func RunTxs(p BasepParam, e func(ethcmm.Address) []TxParam) {
-	clients := client.GenerateClients(transfer.TransferCfg.Rpc)    // generate CosmosClient or EthClient
-	accounts := generateAccounts(transfer.TransferCfg.PrivateKeys) // generate accounts
+	clients := client.GenerateClients(config.TransferCfg.Rpc)    // generate CosmosClient or EthClient
+	accounts := generateAccounts(config.TransferCfg.PrivateKeys) // generate accounts
 
-	concurrency := transfer.TransferCfg.Concurrency
+	concurrency := config.TransferCfg.Concurrency
 	for i := 0; i < concurrency; i++ {
 		go func(gIndex int) {
 			for j := 0; ; j++ {
 				aIndex := (gIndex + j*concurrency) % len(accounts) // make sure accounts will be picked in order by round-robin
 				acc := accounts[aIndex]
 				cli := clients[aIndex%len(clients)]
-				tendermintUrl := transfer.TransferCfg.Rpc[aIndex%len(clients)]
+				tendermintUrl := config.TransferCfg.Rpc[aIndex%len(clients)]
 
-				if transfer.TransferCfg.Threshold < math.MaxInt && getMempoolSize(tendermintUrl) > transfer.TransferCfg.Threshold {
+				if config.TransferCfg.Threshold < math.MaxInt && getMempoolSize(tendermintUrl) > config.TransferCfg.Threshold {
 					fmt.Println("达到阈值")
 					return
 				}

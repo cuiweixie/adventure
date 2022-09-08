@@ -7,6 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/okex/adventure/common"
 	"github.com/okex/adventure/evm/bench/utils"
+	"github.com/okex/adventure/evm/config"
 	"github.com/okex/adventure/evm/constant"
 	evmtypes "github.com/okex/exchain-go-sdk/module/evm/types"
 	sdk "github.com/okex/exchain/libs/cosmos-sdk/types"
@@ -21,18 +22,7 @@ var (
 	// used for flags
 	fixed      bool
 	configPath string
-
-	TransferCfg TransferConfig
 )
-
-type TransferConfig struct {
-	Rpc              []string `json:"rpc"`
-	TenderMint       []string `json:"tenderMint"`
-	Concurrency      int      `json:"concurrency"`
-	Threshold        int      `json:"threshold"`
-	AccountsFilePath string   `json:"accountsFilePath"`
-	PrivateKeys      []string
-}
 
 func transfer(cmd *cobra.Command, args []string) {
 	amount := sdk.MustNewDecFromStr("0.00001").Int
@@ -75,12 +65,12 @@ func loadConfig(configPath string) error {
 
 	defer file.Close()
 
-	if err := json.Unmarshal(data, &TransferCfg); err != nil {
+	if err := json.Unmarshal(data, &config.TransferCfg); err != nil {
 		return err
 	}
 
-	privateKeys := common.ReadDataFromFile(TransferCfg.AccountsFilePath)
-	TransferCfg.PrivateKeys = privateKeys
+	privateKeys := common.ReadDataFromFile(config.TransferCfg.AccountsFilePath)
+	config.TransferCfg.PrivateKeys = privateKeys
 
 	return nil
 }
