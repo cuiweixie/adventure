@@ -191,9 +191,8 @@ func RunTxs(p BasepParam, e func(ethcmm.Address) []TxParam) {
 				acc := accounts[aIndex]
 				cli := clients[aIndex%len(clients)]
 				tendermintUrl := config.TransferCfg.TenderMint[aIndex%len(clients)]
-				mempoolsize := getMempoolSize(tendermintUrl)
 
-				if config.TransferCfg.Threshold > 0 && j%10 == 0 && mempoolsize >= config.TransferCfg.Threshold {
+				if config.TransferCfg.Threshold > 0 && j%10 == 0 && getMempoolSize(tendermintUrl) >= config.TransferCfg.Threshold {
 					fmt.Println("达到阈值")
 					continue
 				}
