@@ -45,7 +45,7 @@
     "http://34.218.198.69:26657",
     "http://34.218.198.69:36657"
   ],
-  "concurrency": 3000,
-  "threshold": 135000,
+  "concurrency": 2000,
+  "threshold": 0,
   "accountsFilePath": "./config/devnet/addr_50000_transfer"
 }
