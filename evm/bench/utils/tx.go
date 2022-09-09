@@ -251,6 +251,8 @@ func execute(gIndex int, cli client.Client, acc *EthAccount, e func(ethcmm.Addre
 	}
 
 	eParams := e(caller)
+
+	fmt.Println("eParams length:", len(eParams))
 	for _, eParam := range eParams {
 		_, err := cli.SendEthereumTx(acc.GetPrivateKey(), acc.GetNonce(), eParam.to, eParam.amount, eParam.gasLimit, eParam.gasPrice, eParam.data)
 		if err != nil {
