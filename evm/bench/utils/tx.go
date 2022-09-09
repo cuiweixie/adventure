@@ -228,6 +228,7 @@ func getMempoolSize(tendermintUrl string) int {
 		fmt.Println(err)
 		return 0
 	}
+	fmt.Println(string(bts))
 
 	err = json.Unmarshal(bts, &result)
 	if err != nil {
@@ -235,7 +236,7 @@ func getMempoolSize(tendermintUrl string) int {
 		return 0
 	}
 
-	//fmt.Println("mempool size :", result.Result.Total)
+	fmt.Println("mempool size :", result.Result.Total)
 	total, _ := strconv.Atoi(result.Result.Total)
 	return total
 }
