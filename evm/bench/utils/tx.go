@@ -194,7 +194,7 @@ func RunTxs(p BasepParam, e func(ethcmm.Address) []TxParam) {
 
 				if config.TransferCfg.Threshold > 0 && getMempoolSize(tendermintUrl) > config.TransferCfg.Threshold {
 					fmt.Println("达到阈值")
-					return
+					continue
 				}
 
 				execute(gIndex, cli, acc, e)
