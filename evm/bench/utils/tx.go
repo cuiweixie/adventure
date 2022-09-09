@@ -191,8 +191,9 @@ func RunTxs(p BasepParam, e func(ethcmm.Address) []TxParam) {
 				acc := accounts[aIndex]
 				cli := clients[aIndex%len(clients)]
 				tendermintUrl := config.TransferCfg.Rpc[aIndex%len(clients)]
+				mempoolsize := getMempoolSize(tendermintUrl)
 
-				if config.TransferCfg.Threshold > 0 && getMempoolSize(tendermintUrl) > config.TransferCfg.Threshold {
+				if mempoolsize >= config.TransferCfg.Threshold {
 					fmt.Println("达到阈值")
 					continue
 				}
@@ -251,8 +252,6 @@ func execute(gIndex int, cli client.Client, acc *EthAccount, e func(ethcmm.Addre
 	}
 
 	eParams := e(caller)
-
-	fmt.Println("eParams length:", len(eParams))
 	for _, eParam := range eParams {
 		_, err := cli.SendEthereumTx(acc.GetPrivateKey(), acc.GetNonce(), eParam.to, eParam.amount, eParam.gasLimit, eParam.gasPrice, eParam.data)
 		if err != nil {
