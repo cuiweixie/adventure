@@ -190,10 +190,10 @@ func RunTxs(p BasepParam, e func(ethcmm.Address) []TxParam) {
 				aIndex := (gIndex + j*concurrency) % len(accounts) // make sure accounts will be picked in order by round-robin
 				acc := accounts[aIndex]
 				cli := clients[aIndex%len(clients)]
-				tendermintUrl := config.TransferCfg.Rpc[aIndex%len(clients)]
+				tendermintUrl := config.TransferCfg.TenderMint[aIndex%len(clients)]
 				mempoolsize := getMempoolSize(tendermintUrl)
 
-				if mempoolsize >= config.TransferCfg.Threshold {
+				if config.TransferCfg.Threshold > 0 && mempoolsize >= config.TransferCfg.Threshold {
 					fmt.Println("达到阈值")
 					continue
 				}
@@ -228,7 +228,6 @@ func getMempoolSize(tendermintUrl string) int {
 		fmt.Println(err)
 		return 0
 	}
-	fmt.Println(string(bts))
 
 	err = json.Unmarshal(bts, &result)
 	if err != nil {
@@ -236,7 +235,7 @@ func getMempoolSize(tendermintUrl string) int {
 		return 0
 	}
 
-	fmt.Println("mempool size :", result.Result.Total)
+	//fmt.Println("mempool size :", result.Result.Total)
 	total, _ := strconv.Atoi(result.Result.Total)
 	return total
 }
