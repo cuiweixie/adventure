@@ -182,6 +182,17 @@ func RunTxRpc(p BasepParam, e func(ethcmm.Address) []TxParam) {
 func RunTxs(p BasepParam, e func(ethcmm.Address) []TxParam) {
 	clients := client.GenerateClients(config.TransferCfg.Rpc)    // generate CosmosClient or EthClient
 	accounts := generateAccounts(config.TransferCfg.PrivateKeys) // generate accounts
+	mempoolSizeMap := &sync.Map{}
+
+	for _, tendermint := range config.TransferCfg.TenderMint {
+		go func(url string) {
+			for {
+				size := getMempoolSize(url)
+				mempoolSizeMap.Store(url, size)
+				time.Sleep(500 * time.Millisecond)
+			}
+		}(tendermint)
+	}
 
 	concurrency := config.TransferCfg.Concurrency
 	count := len(accounts) / concurrency
@@ -193,11 +204,15 @@ func RunTxs(p BasepParam, e func(ethcmm.Address) []TxParam) {
 					acc := accounts[index]
 					cli := clients[index%len(clients)]
 					tendermintUrl := config.TransferCfg.TenderMint[index%len(clients)]
-					if config.TransferCfg.Threshold > 0 && j%5 == 0 && getMempoolSize(tendermintUrl) >= config.TransferCfg.Threshold {
-						fmt.Println("达到阈值")
+					//if config.TransferCfg.Threshold > 0 && j%5 == 0 && getMempoolSize(tendermintUrl) >= config.TransferCfg.Threshold {
+					//	fmt.Println("达到阈值")
+					//	continue
+					//}
+
+					mempoolSize, ok := mempoolSizeMap.Load(tendermintUrl)
+					if ok && mempoolSize.(int) >= config.TransferCfg.Threshold {
 						continue
 					}
-
 					execute(gIndex, cli, acc, e)
 				}
 
