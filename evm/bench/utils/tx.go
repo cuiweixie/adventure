@@ -184,20 +184,23 @@ func RunTxs(p BasepParam, e func(ethcmm.Address) []TxParam) {
 	accounts := generateAccounts(config.TransferCfg.PrivateKeys) // generate accounts
 
 	concurrency := config.TransferCfg.Concurrency
+	count := len(accounts) / concurrency
 	for i := 0; i < concurrency; i++ {
 		go func(gIndex int) {
 			for j := 0; ; j++ {
-				aIndex := (gIndex + j*concurrency) % len(accounts) // make sure accounts will be picked in order by round-robin
-				acc := accounts[aIndex]
-				cli := clients[aIndex%len(clients)]
-				tendermintUrl := config.TransferCfg.TenderMint[aIndex%len(clients)]
+				//aIndex := (gIndex + j*concurrency) % len(accounts) // make sure accounts will be picked in order by round-robin
+				for index :=gIndex * count; index < (gIndex+1)*count; index++ {
+					acc := accounts[index]
+					cli := clients[index%len(clients)]
+					tendermintUrl := config.TransferCfg.TenderMint[index%len(clients)]
+					if config.TransferCfg.Threshold > 0 && j%10 == 0 && getMempoolSize(tendermintUrl) >= config.TransferCfg.Threshold {
+						fmt.Println("达到阈值")
+						continue
+					}
 
-				if config.TransferCfg.Threshold > 0 && j%10 == 0 && getMempoolSize(tendermintUrl) >= config.TransferCfg.Threshold {
-					fmt.Println("达到阈值")
-					continue
+					execute(gIndex, cli, acc, e)
 				}
 
-				execute(gIndex, cli, acc, e)
 			}
 		}(i)
 	}
