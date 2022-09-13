@@ -189,11 +189,11 @@ func RunTxs(p BasepParam, e func(ethcmm.Address) []TxParam) {
 		go func(gIndex int) {
 			for j := 0; ; j++ {
 				//aIndex := (gIndex + j*concurrency) % len(accounts) // make sure accounts will be picked in order by round-robin
-				for index :=gIndex * count; index < (gIndex+1)*count; index++ {
+				for index := gIndex * count; index < (gIndex+1)*count; index++ {
 					acc := accounts[index]
 					cli := clients[index%len(clients)]
 					tendermintUrl := config.TransferCfg.TenderMint[index%len(clients)]
-					if config.TransferCfg.Threshold > 0 && j%10 == 0 && getMempoolSize(tendermintUrl) >= config.TransferCfg.Threshold {
+					if getMempoolSize(tendermintUrl) >= config.TransferCfg.Threshold {
 						fmt.Println("达到阈值")
 						continue
 					}
