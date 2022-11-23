@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/okex/exchain/libs/tendermint/libs/rand"
 	"io/ioutil"
 	"math/big"
 	"time"
@@ -28,6 +29,8 @@ func transferOkt(key string, to common.Address, nonce uint64, value *big.Int) *t
 }
 
 func SignTxWithNonce(privateKey *ecdsa.PrivateKey, to common.Address, payLoad []byte, nonce uint64) *types.Transaction {
+	v := 1000000000 + rand.Int63n(1000000000)
+	gasPrice := new(big.Int).SetUint64(uint64(v))
 	tx, err := types.SignTx(types.NewTransaction(nonce, to, new(big.Int), gasLimit, gasPrice, payLoad), signer, privateKey)
 	panicerr(err)
 	return tx
