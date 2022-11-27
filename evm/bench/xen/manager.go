@@ -280,7 +280,6 @@ func (m *xenManager) t(workIndex int) error {
 		tx := SignTxWithNonce(a.ecdsaPriv, m.coinToolAddress, payload, nonce)
 		txList = append(txList, tx)
 		nonce++
-		lastTxHash = tx.Hash()
 	}
 
 	if err := SendTxs(m.clientList[workIndex%len(m.clientList)], txList); err != nil {
