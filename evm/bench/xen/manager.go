@@ -34,7 +34,7 @@ func (m *xenManager) prePareWorker(path string) {
 		acc := keyToAcc(strings.TrimSpace(privKey))
 		accList = append(accList, acc)
 	}
-	m.worker = accList
+	m.worker = accList[:len(m.worker)/2]
 
 	for index, v := range m.worker {
 		v.index = index
@@ -338,7 +338,7 @@ func (m *xenManager) f(workIndex int, txLen int) error {
 
 func (m *xenManager) run(tasks []int) {
 	for index, workIndex := range tasks {
-		if err := m.t(workIndex, 2); err != nil {
+		if err := m.t(workIndex, 1); err != nil {
 			fmt.Println("init xen failed", err)
 		}
 
