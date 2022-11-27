@@ -1,5 +1,5 @@
 {
-  "RPC": [
+  "rpc": [
     "http://44.236.71.233:26659",
     "http://3.113.237.222:26659",
     "http://3.113.237.222:36659",
@@ -22,7 +22,7 @@
     "http://34.218.198.69:26659",
     "http://34.218.198.69:36659"
   ],
-  "Node": [
+  "tendermint": [
     "http://44.236.71.233:26657",
     "http://3.113.237.222:26657",
     "http://3.113.237.222:36657",
@@ -45,10 +45,7 @@
     "http://34.218.198.69:26657",
     "http://34.218.198.69:36657"
   ],
-  "SuperAcc": "824c346a2b5fa81768c75408202493a9cb0a7f5879ff4988d23da2c6b1afb9cf",
-  "ContractPath": "./config/devnet/cList_devnet_10.json",
-  "WorkerPath": "./config/devnet/addr_20000_wmt",
-  "ParaNum": 3000,
-  "SendOKTToWorker": true,
-  "Threshold": 180000
+  "concurrency": 2000,
+  "threshold": 0,
+  "accountsFilePath": "./config/devnet/addr_50000_transfer"
 }

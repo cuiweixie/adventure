@@ -54,14 +54,17 @@ func getM() *wmtManager {
 	initBuilder()
 	initClient(c)
 	cList := LoadContractList(c.ContractPath)
-	clients := make([]*ethclient.Client, 0)
-	for _, v := range c.RPC {
-		c, err := ethclient.Dial(v)
+	clients := make([]*okcClient, 0)
+	for i, v := range c.RPC {
+		client, err := ethclient.Dial(v)
 		panicerr(err)
-		clients = append(clients, c)
+		clients = append(clients, &okcClient{
+			Client: client,
+			rpc:    c.Node[i],
+		})
 	}
 	superAcc := keyToAcc(c.SuperAcc)
-	return newManager(cList, superAcc, c.WorkerPath, c.ParaNum, clients, c.SendOKTToWorker)
+	return newManager(cList, superAcc, c.WorkerPath, c.ParaNum, clients, c.SendOKTToWorker, c.Threshold)
 }
 func wmtRun(cmd *cobra.Command, args []string) {
 	m := getM()

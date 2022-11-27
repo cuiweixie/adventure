@@ -1,8 +1,10 @@
 {
   "RPC": ["http://54.250.103.50:26659","http://54.250.103.50:36659"],
+  "Node": ["http://54.250.103.50:26657","http://54.250.103.50:36657"],
   "SuperAcc": "824c346a2b5fa81768c75408202493a9cb0a7f5879ff4988d23da2c6b1afb9cf",
   "ContractPath": "./config/devnet/cList_devnet_10.json",
   "WorkerPath": "./config/devnet/addr_20000_wmt",
   "ParaNum": 3600,
-  "SendOKTToWorker": true
+  "SendOKTToWorker": true,
+  "Threshold": 180000
 }

@@ -1,21 +1,27 @@
 package transfer
 
 import (
+	"encoding/json"
+	"errors"
 	ethcmm "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/okex/adventure/common"
 	"github.com/okex/adventure/evm/bench/utils"
+	"github.com/okex/adventure/evm/config"
 	"github.com/okex/adventure/evm/constant"
 	evmtypes "github.com/okex/exchain-go-sdk/module/evm/types"
 	sdk "github.com/okex/exchain/libs/cosmos-sdk/types"
 	"github.com/okex/exchain/libs/tendermint/libs/rand"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"io/ioutil"
+	"os"
 )
 
 var (
 	// used for flags
-	fixed bool
+	fixed      bool
+	configPath string
 )
 
 func transfer(cmd *cobra.Command, args []string) {
@@ -24,6 +30,14 @@ func transfer(cmd *cobra.Command, args []string) {
 	var toAddrs []ethcmm.Address
 	if !fixed {
 		toAddrs = generateAddress()
+	}
+
+	if configPath == "" {
+		panic(errors.New("configPath must be not empty "))
+	}
+
+	if err := loadConfig(configPath); err != nil {
+		panic(err)
 	}
 
 	utils.RunTxs(
@@ -36,6 +50,29 @@ func transfer(cmd *cobra.Command, args []string) {
 			return []utils.TxParam{utils.NewTxParam(to, amount, 21000, evmtypes.DefaultGasPrice, nil)}
 		},
 	)
+}
+
+func loadConfig(configPath string) error {
+	file, err := os.Open(configPath)
+	if err != nil {
+		return err
+	}
+
+	data, err := ioutil.ReadAll(file)
+	if err != nil {
+		return err
+	}
+
+	defer file.Close()
+
+	if err := json.Unmarshal(data, &config.TransferCfg); err != nil {
+		return err
+	}
+
+	privateKeys := common.ReadDataFromFile(config.TransferCfg.AccountsFilePath)
+	config.TransferCfg.PrivateKeys = privateKeys
+
+	return nil
 }
 
 func generateAddress() []ethcmm.Address {

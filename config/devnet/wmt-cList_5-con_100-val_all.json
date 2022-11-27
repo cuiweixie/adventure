@@ -46,9 +46,9 @@
     "http://34.218.198.69:36657"
   ],
   "SuperAcc": "824c346a2b5fa81768c75408202493a9cb0a7f5879ff4988d23da2c6b1afb9cf",
-  "ContractPath": "./config/devnet/cList_devnet_10.json",
+  "ContractPath": "./config/devnet/cList_devnet_5.json",
   "WorkerPath": "./config/devnet/addr_20000_wmt",
-  "ParaNum": 3000,
+  "ParaNum": 100,
   "SendOKTToWorker": true,
   "Threshold": 180000
 }

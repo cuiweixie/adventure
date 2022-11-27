@@ -8,7 +8,7 @@ func TransferCmd() *cobra.Command {
 		Short: "send native token to address",
 		Run:   transfer,
 	}
-
+	cmd.Flags().StringVar(&configPath, "f", "", "the location of transfer config file")
 	cmd.Flags().BoolVarP(&fixed, "fixed", "f", false, "if true, transfer to one address; otherwise, transfer to a random address")
 	return cmd
 }

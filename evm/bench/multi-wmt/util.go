@@ -8,7 +8,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"io/ioutil"
 	"math/big"
 	"strings"
@@ -79,7 +78,7 @@ func keyToAcc(key string) *acc {
 	}
 }
 
-func SendTxs(client *ethclient.Client, txs []*types.Transaction) error {
+func SendTxs(client *okcClient, txs []*types.Transaction) error {
 	for index, v := range txs {
 		//time.Sleep(200 * time.Microsecond)
 		cnt := 0
@@ -118,11 +117,13 @@ func SendTxs(client *ethclient.Client, txs []*types.Transaction) error {
 
 type wmtConfig struct {
 	RPC             []string
+	Node            []string
 	ContractPath    string
 	SuperAcc        string
 	WorkerPath      string
 	ParaNum         int
 	SendOKTToWorker bool
+	Threshold       int
 }
 
 func loadWMTConfig(file string) *wmtConfig {

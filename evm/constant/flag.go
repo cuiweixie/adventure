@@ -6,4 +6,5 @@ var (
 	FlagConcurrency    = "concurrency"
 	FlagSleep          = "sleep"
 	FlagPrivateKeyFile = "private-key-file"
+	FlagThreshold      = "threshold"
 )

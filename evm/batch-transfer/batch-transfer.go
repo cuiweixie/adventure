@@ -3,6 +3,7 @@ package batch_transfer
 import (
 	"crypto/ecdsa"
 	"fmt"
+	sdk "github.com/okex/exchain/libs/cosmos-sdk/types"
 	"log"
 	"math/big"
 	"strings"
@@ -15,7 +16,6 @@ import (
 	"github.com/okex/adventure/common/client"
 	"github.com/okex/adventure/evm/constant"
 	evmtypes "github.com/okex/exchain-go-sdk/module/evm/types"
-	sdk "github.com/okex/exchain/libs/cosmos-sdk/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -48,6 +48,33 @@ func batchTransfer(cmd *cobra.Command, args []string) {
 		log.Println(fmt.Errorf("failed to transfer, error: %s", err))
 		return
 	}
+
+	//file, _ := os.Open("/Users/finefine/workspace/ok/adventure/config/devnet/addr_50000_transfer")
+	//defer file.Close()
+	//scanner := bufio.NewScanner(file)
+	//targetFile, _ := os.Create("/Users/finefine/workspace/ok/adventure/config/devnet/address_50000_transfer")
+	//writer := bufio.NewWriter(targetFile)
+	//defer targetFile.Close()
+	//
+	//for scanner.Scan() {
+	//	key := scanner.Text()
+	//	privateKey, err := crypto.HexToECDSA(key)
+	//	if err != nil {
+	//		panic(err)
+	//	}
+	//
+	//	publicKey := privateKey.Public()
+	//	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
+	//	if !ok {
+	//		panic("keyToAcc")
+	//	}
+	//	address := crypto.PubkeyToAddress(*publicKeyECDSA)
+	//	fmt.Println(key, address.String())
+	//
+	//	writer.WriteString(address.String())
+	//	writer.WriteString("\n")
+	//}
+
 }
 
 func loadEnv() (client.Client, *ecdsa.PrivateKey, []ethcmn.Address) {
@@ -112,7 +139,7 @@ func transfers(cli client.Client, privateKey *ecdsa.PrivateKey, nonce uint64, to
 		log.Printf("caller: %s, nonce: %d, to[%d:%d] txhash: %s\n", common.GetEthAddressFromPK(privateKey), nonce, start, end-1, txhash)
 
 		nonce++
-		time.Sleep(time.Second)
+		//time.Sleep(time.Second)
 	}
 
 	return nil
