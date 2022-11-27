@@ -263,11 +263,10 @@ func randomXen() int {
 	return rand.Intn(100)
 }
 
-func (m *xenManager) t(workIndex int) error {
+func (m *xenManager) t(workIndex int, txLen int) error {
 	a := m.worker[workIndex]
 	nonce := m.nonceM.getNonce(a.ethAddress)
 	allCnt := int64(0)
-	txLen := 5
 
 	txList := make([]*types.Transaction, 0)
 	for index := 0; index < txLen; index++ {
@@ -295,10 +294,10 @@ func (m *xenManager) t(workIndex int) error {
 	return nil
 
 }
-func (m *xenManager) f(workIndex int) error {
+func (m *xenManager) f(workIndex int, txLen int) error {
 	a := m.worker[workIndex]
 	nonce := m.nonceM.getNonce(a.ethAddress)
-	txLen := 5
+
 	allCnt := 0
 
 	startClaimTime := m.xenInfos[workIndex].claimTime
@@ -339,26 +338,27 @@ func (m *xenManager) f(workIndex int) error {
 
 func (m *xenManager) run(tasks []int) {
 	for index, workIndex := range tasks {
-		for index := 0; index < 2; index++ {
-			if err := m.t(workIndex); err != nil {
-				fmt.Println("init xen failed", err)
-			}
+		if err := m.t(workIndex, 10); err != nil {
+			fmt.Println("init xen failed", err)
 		}
-		fmt.Println("init xen index", index, "size", len(tasks))
+
+		if index%10 == 0 {
+			fmt.Println("init xen index", index, "size", len(tasks))
+		}
+
 	}
 
 	for true {
 		for _, workIndex := range tasks {
-			for index := 0; index < 2; index++ {
-				if err := m.t(workIndex); err != nil {
-					fmt.Println("send t failed", workIndex, err)
-				}
+
+			if err := m.t(workIndex, 2); err != nil {
+				fmt.Println("send t failed", workIndex, err)
 			}
-			for index := 0; index < 2; index++ {
-				if err := m.f(workIndex); err != nil {
-					fmt.Println("send f failed", workIndex, err)
-				}
+
+			if err := m.f(workIndex, 2); err != nil {
+				fmt.Println("send f failed", workIndex, err)
 			}
+
 		}
 	}
 }
