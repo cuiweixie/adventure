@@ -4,5 +4,5 @@
   "WorkerPath": "./config/devnet/addr_20000_wmt",
   "CoinToolAddress": "",
   "XenAddress": "",
-  "ParaNum": 100
+  "ParaNum": 500
 }
