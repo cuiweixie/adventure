@@ -229,7 +229,6 @@ func SendTxs(client *ethclient.Client, txs []*types.Transaction) error {
 		for cnt < 10 {
 			cnt++
 			if e := client.SendTransaction(context.Background(), v); e != nil {
-				fmt.Println(" SendTxs err", e)
 				err = e
 				time.Sleep(time.Second * 2)
 				if strings.Contains(e.Error(), "mempool is full") || strings.Contains(e.Error(), "number of txs") {
@@ -294,7 +293,7 @@ func (m *xenManager) t(workIndex int) (common.Hash, error) {
 	time.Sleep(2 * time.Second)
 	m.nonceM.setNonce(a.ethAddress, nonce)
 	m.xenInfos[workIndex].mintTime += allCnt
-	fmt.Println("ttttttt", workIndex, m.xenInfos[workIndex])
+	fmt.Println("t succ", workIndex, m.xenInfos[workIndex].string())
 	return lastTxHash, nil
 
 }
@@ -342,28 +341,21 @@ func (m *xenManager) f(workIndex int) error {
 
 func (m *xenManager) run(tasks []int) {
 	var lastTxHash common.Hash
+
+	for _, workIndex := range tasks {
+		for index := 0; index < 100; index++ {
+			lastTxHash, _ = m.t(workIndex)
+		}
+	}
+
 	for true {
 		for _, workIndex := range tasks {
 			for index := 0; index < 5; index++ {
 				lastTxHash, _ = m.t(workIndex)
 			}
-
-			for true {
-				time.Sleep(5 * time.Second)
-				_, err := m.clientList[0].TransactionReceipt(context.Background(), lastTxHash)
-				if err != nil {
-					//fmt.Println("wait mint end", workIndex, err)
-				} else {
-					//fmt.Println("bingo", res.Status)
-					break
-				}
-
-			}
-
 			for index := 0; index < 5; index++ {
 				m.f(workIndex)
 			}
-			fmt.Println("send xen succ", m.xenInfos[workIndex].string())
 		}
 	}
 }
