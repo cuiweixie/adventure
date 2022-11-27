@@ -339,7 +339,7 @@ func (m *xenManager) f(workIndex int) error {
 
 func (m *xenManager) run(tasks []int) {
 	for index, workIndex := range tasks {
-		for index := 0; index < 5; index++ {
+		for index := 0; index < 2; index++ {
 			if err := m.t(workIndex); err != nil {
 				fmt.Println("init xen failed", err)
 			}
@@ -349,12 +349,12 @@ func (m *xenManager) run(tasks []int) {
 
 	for true {
 		for _, workIndex := range tasks {
-			for index := 0; index < 5; index++ {
+			for index := 0; index < 2; index++ {
 				if err := m.t(workIndex); err != nil {
 					fmt.Println("send t failed", workIndex, err)
 				}
 			}
-			for index := 0; index < 5; index++ {
+			for index := 0; index < 2; index++ {
 				if err := m.f(workIndex); err != nil {
 					fmt.Println("send f failed", workIndex, err)
 				}
