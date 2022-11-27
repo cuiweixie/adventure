@@ -184,7 +184,7 @@ func GetNonce(client *okcClient, privateKey *ecdsa.PrivateKey) uint64 {
 	for cnt < 50 {
 		nonce, err := client.PendingNonceAt(context.Background(), fromAddress)
 		if err != nil {
-			time.Sleep(2 * time.Second)
+			time.Sleep(1000 * time.Microsecond)
 		} else {
 			return nonce
 		}
@@ -195,22 +195,26 @@ func GetNonce(client *okcClient, privateKey *ecdsa.PrivateKey) uint64 {
 }
 
 func (m *wmtManager) Loop() {
-	fmt.Printf("begin send wmt")
+	tasks := make([][]int, m.paraNum)
 
-	var wg sync.WaitGroup
-	workerIndex := 0
+	for index, _ := range m.worker {
+		paraIndex := index % m.paraNum
+		tasks[paraIndex] = append(tasks[paraIndex], index)
+	}
 
 	for index := 0; index < m.paraNum; index++ {
-		workIndexList := make([]int, 0)
-		for i := 0; i < len(m.worker)/m.paraNum; i++ {
-			workIndexList = append(workIndexList, workerIndex)
-			workerIndex++
-		}
+		fmt.Println("goRoutine", index, "worker", tasks[index])
+	}
 
+	fmt.Println("====== begin send wmt =======")
+
+	var wg sync.WaitGroup
+	for index := 0; index < m.paraNum; index++ {
+		index := index
 		wg.Add(1)
 		go func() {
-			defer wg.Done()
-			m.run(workIndexList)
+			m.run(tasks[index])
+			wg.Done()
 		}()
 	}
 	wg.Wait()
@@ -299,6 +303,7 @@ func (m *wmtManager) runPool(poolIndex int, workIndex int, getReward bool) error
 	a := m.worker[workIndex]
 	c := m.contracList[contractIndex]
 
+
 	if m.clientList[workIndex%len(m.clientList)].GetMempoolSize() > m.threshold {
 		fmt.Println("达到阈值")
 		return nil
@@ -382,6 +387,9 @@ func (m *wmtManager) runPool(poolIndex int, workIndex int, getReward bool) error
 	}
 
 	if err := SendTxs(m.clientList[workIndex%len(m.clientList)], txList); err != nil {
+		fmt.Println("SendTxs failed", err)
+		time.Sleep(60 * time.Second)
+		m.nonceM.setNonce(a.ethAddress, GetNonce(m.clientList[0], a.ecdsaPriv))
 		return err
 	}
 

@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"io/ioutil"
 	"math/big"
+	"strings"
 	"time"
 )
 
@@ -82,12 +83,20 @@ func SendTxs(client *okcClient, txs []*types.Transaction) error {
 		//time.Sleep(200 * time.Microsecond)
 		cnt := 0
 		var err error
-		for cnt < 50 {
+		for cnt < 10 {
 			cnt++
 			if e := client.SendTransaction(context.Background(), v); e != nil {
-				fmt.Println("index", index, e)
 				err = e
-				time.Sleep(time.Second * 5)
+				time.Sleep(time.Second * 2)
+				if strings.Contains(e.Error(), "mempool is full") || strings.Contains(e.Error(), "number of txs") {
+					time.Sleep(20 * time.Second)
+				} else if strings.Contains(e.Error(), "failed to replace tx for acccount") {
+					err = nil
+				} else if strings.Contains(e.Error(), "invalid sequence") {
+					time.Sleep(2 * time.Second)
+				} else {
+					fmt.Println("sendTransaction failed", index, e, "tryCnt", cnt)
+				}
 			} else {
 				err = nil
 				break

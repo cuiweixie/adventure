@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/okex/adventure/evm"
+	"github.com/okex/adventure/tools/staking"
 	"github.com/okex/adventure/tools/version"
 	"github.com/spf13/cobra"
 )
@@ -38,6 +39,7 @@ adventure is a very powerful cli tool for OKChain. It supports JSON-file and Sub
 	}
 
 	mainCmd.AddCommand(
+		staking.QueryValidatorsCmd(),
 		version.VersionCmd(),
 		evm.EvmCmd(),
 	)
