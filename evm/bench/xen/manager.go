@@ -34,7 +34,7 @@ func (m *xenManager) prePareWorker(path string) {
 		acc := keyToAcc(strings.TrimSpace(privKey))
 		accList = append(accList, acc)
 	}
-	m.worker = accList[:len(m.worker)/20]
+	m.worker = accList[:len(accList)/20]
 
 	for index, v := range m.worker {
 		v.index = index
