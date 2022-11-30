@@ -180,18 +180,14 @@ func GetNonce(client *okcClient, privateKey *ecdsa.PrivateKey) uint64 {
 	}
 	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
 
-	cnt := 0
-	for cnt < 50 {
+	for {
 		nonce, err := client.PendingNonceAt(context.Background(), fromAddress)
 		if err != nil {
 			time.Sleep(1000 * time.Microsecond)
 		} else {
 			return nonce
 		}
-		cnt++
 	}
-	panic("GetNonce Failed")
-
 }
 
 func (m *wmtManager) Loop() {
@@ -302,7 +298,6 @@ func (m *wmtManager) runPool(poolIndex int, workIndex int, getReward bool) error
 	contractIndex := workIndex % len(m.contracList)
 	a := m.worker[workIndex]
 	c := m.contracList[contractIndex]
-
 
 	if m.clientList[workIndex%len(m.clientList)].GetMempoolSize() > m.threshold {
 		fmt.Println("达到阈值")

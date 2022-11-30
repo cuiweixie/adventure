@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	xenConfigFile = "./config/wmt.json"
+	xenConfigFile = "./config/xen.json"
 )
 
 func panicerr(err error) {
