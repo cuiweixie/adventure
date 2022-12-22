@@ -8,12 +8,10 @@ import (
 	"github.com/okex/adventure/common"
 	"github.com/okex/adventure/evm/bench/utils"
 	"github.com/okex/adventure/evm/config"
-	"github.com/okex/adventure/evm/constant"
 	evmtypes "github.com/okex/exchain-go-sdk/module/evm/types"
 	sdk "github.com/okex/exchain/libs/cosmos-sdk/types"
 	"github.com/okex/exchain/libs/tendermint/libs/rand"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"io/ioutil"
 	"os"
 )
@@ -27,10 +25,6 @@ var (
 func transfer(cmd *cobra.Command, args []string) {
 	amount := sdk.MustNewDecFromStr("0.00001").Int
 	fixedAddr := ethcmm.BytesToAddress(crypto.Keccak256(rand.Bytes(64)))
-	var toAddrs []ethcmm.Address
-	if !fixed {
-		toAddrs = generateAddress()
-	}
 
 	if configPath == "" {
 		panic(errors.New("configPath must be not empty "))
@@ -38,6 +32,11 @@ func transfer(cmd *cobra.Command, args []string) {
 
 	if err := loadConfig(configPath); err != nil {
 		panic(err)
+	}
+
+	var toAddrs []ethcmm.Address
+	if !fixed {
+		toAddrs = generateAddress()
 	}
 
 	utils.RunTxs(
@@ -76,10 +75,12 @@ func loadConfig(configPath string) error {
 }
 
 func generateAddress() []ethcmm.Address {
-	privateKeys := constant.PrivateKeys
-	if privateKeyFile := viper.GetString(constant.FlagPrivateKeyFile); privateKeyFile != "" {
-		privateKeys = common.ReadDataFromFile(privateKeyFile)
-	}
+	//privateKeys := constant.PrivateKeys
+	//if privateKeyFile := viper.GetString(constant.FlagPrivateKeyFile); privateKeyFile != "" {
+	//	privateKeys = common.ReadDataFromFile(privateKeyFile)
+	//}
+
+	privateKeys := config.TransferCfg.PrivateKeys
 
 	leng := len(privateKeys)
 	addrs := make([]ethcmm.Address, leng, leng)
