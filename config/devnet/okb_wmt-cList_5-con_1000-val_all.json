@@ -1,0 +1,22 @@
+{
+  "RPC": [
+    "http://3.113.237.222:8545",
+    "http://35.79.9.80:8545",
+    "http://3.113.72.167:8545",
+    "http://13.112.243.230:8545",
+    "http://13.112.241.135:8545"
+  ],
+  "Node": [
+"http://3.113.237.222:8545",
+    "http://35.79.9.80:8545",
+    "http://3.113.72.167:8545",
+    "http://13.112.243.230:8545",
+    "http://13.112.241.135:8545"
+  ],
+  "SuperAcc": "8ff3ca2d9985c3a52b459e2f6e7822b23e1af845961e22128d5f372fb9aa5f17",
+  "ContractPath": "./config/devnet/okb_cList.json",
+  "WorkerPath": "./config/devnet/addr_20000_wmt",
+  "ParaNum": 1000,
+  "SendOKTToWorker": true,
+  "Threshold": 0
+}
