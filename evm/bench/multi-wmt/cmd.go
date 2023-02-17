@@ -1,10 +1,12 @@
 package multiwmt
 
 import (
+	"fmt"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/spf13/cobra"
 	"math/big"
+	"strconv"
 )
 
 var (
@@ -32,6 +34,17 @@ func MultiWmtInit() *cobra.Command {
 		Short: "wmt-init",
 		Args:  cobra.NoArgs,
 		Run:   wmtInit,
+	}
+	wmtCmd.Flags().StringVar(&wmtFile, "f", "", "the location of wmt config file")
+	return wmtCmd
+}
+
+func MultiWmtTransferGas() *cobra.Command {
+	var wmtCmd = &cobra.Command{
+		Use:   "multiwmt-gas",
+		Short: "wmt-gas",
+		Args:  cobra.NoArgs,
+		Run:   wmtTransferGas,
 	}
 	wmtCmd.Flags().StringVar(&wmtFile, "f", "", "the location of wmt config file")
 	return wmtCmd
@@ -74,6 +87,18 @@ func wmtRun(cmd *cobra.Command, args []string) {
 func wmtInit(cmd *cobra.Command, args []string) {
 	m := getM()
 	m.TransferToken0ToAccount()
+}
+
+func wmtTransferGas(cmd *cobra.Command, args []string) {
+	m := getM()
+
+	amount := int64(1)
+	if len(args) > 0 {
+		fmt.Println(args[1])
+		num, _ := strconv.Atoi(args[1])
+		amount = int64(num)
+	}
+	m.TransferGas(amount)
 }
 
 func wmtToken(cmd *cobra.Command, args []string) {

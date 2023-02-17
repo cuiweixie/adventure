@@ -258,6 +258,25 @@ func (m *wmtManager) DisPlayToken() {
 	}
 }
 
+func (m *wmtManager) TransferGas(amount int64) {
+	gasAmount := new(big.Int).Mul(new(big.Int).SetInt64(1000000000), new(big.Int).SetInt64(1000000000))
+	gasAmount = new(big.Int).Mul(gasAmount, new(big.Int).SetInt64(amount))
+	nonce := GetNonce(m.clientList[0], m.superAcc.ecdsaPriv)
+	txs := make([]*types.Transaction, 0)
+	for _, acc := range m.worker {
+		if m.sendOKTToWorker {
+			tx := transferOkt(m.superAcc.privateKey, acc.ethAddress, nonce, gasAmount)
+			nonce++
+			txs = append(txs, tx)
+		}
+	}
+	fmt.Println("sendTx", len(txs), "use one node,may slow")
+	if err := SendTxs(m.clientList[0], txs); err != nil {
+		panic(err)
+	}
+	fmt.Println("end gas transfer")
+}
+
 func (m *wmtManager) TransferToken0ToAccount() {
 
 	nonce := GetNonce(m.clientList[0], m.superAcc.ecdsaPriv)
