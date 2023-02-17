@@ -28,6 +28,7 @@ func BenchCmd() *cobra.Command {
 		multiwmt.MultiWmtCmt(),
 		multiwmt.MultiWmtInit(),
 		multiwmt.MultiTokenBalance(),
+		multiwmt.MultiWmtTransferGas(),
 		scenario.ScenarioCmd(),
 		transfer.TxRpcCmd(),
 		transfer.TxRlpEncode(),
