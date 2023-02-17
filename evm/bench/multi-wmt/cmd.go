@@ -1,12 +1,10 @@
 package multiwmt
 
 import (
-	"fmt"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/spf13/cobra"
 	"math/big"
-	"strconv"
 )
 
 var (
@@ -92,13 +90,8 @@ func wmtInit(cmd *cobra.Command, args []string) {
 func wmtTransferGas(cmd *cobra.Command, args []string) {
 	m := getM()
 
-	amount := int64(1)
-	if len(args) > 0 {
-		fmt.Println(args[1])
-		num, _ := strconv.Atoi(args[1])
-		amount = int64(num)
-	}
-	m.TransferGas(amount)
+
+	m.TransferGas(10)
 }
 
 func wmtToken(cmd *cobra.Command, args []string) {
