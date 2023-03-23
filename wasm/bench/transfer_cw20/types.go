@@ -1,4 +1,4 @@
-package bench
+package transfer_cw20
 
 import "github.com/okex/exchain/libs/cosmos-sdk/crypto/keys"
 

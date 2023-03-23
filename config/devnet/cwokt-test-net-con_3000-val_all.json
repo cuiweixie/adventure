@@ -1,0 +1,13 @@
+{
+  "RestUrlsRestUrls": [
+    "http://127.0.0.1:8545"
+  ],
+  "TendermintUrls": [
+    "http://127.0.0.1:26657"
+  ],
+  "CW20Address": "ex1nc5tatafv6eyq7llkr2gv50ff9e22mnf70qgjlv737ktmt4eswrqku97gc",
+  "PrivateKeysFile": "./config/devnet/testaddr",
+  "concurrentNum": 1,
+  "threshold": 180000,
+  "chainId": "exchain-67"
+}

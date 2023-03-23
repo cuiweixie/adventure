@@ -1,4 +1,4 @@
-package bench
+package transfer_okt
 
 import (
 	"fmt"
