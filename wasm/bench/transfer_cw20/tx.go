@@ -39,12 +39,30 @@ func RunTxs(e func() sdk.AccAddress) {
 		}(tendermint)
 	}
 
-	for i, acc := range accounts {
-		acc.SetNonce(clients[0])
-		if i%200 == 0 {
-			log.Println("init account size: ", i)
+	ch := make(chan int, 10240)
+
+	go func() {
+		for i := range accounts {
+			ch <- i
 		}
+	}()
+
+	wg := &sync.WaitGroup{}
+	for i := 0; i < len(clients); i++ {
+		wg.Add(1)
+		go func(index int) {
+			defer wg.Done()
+			for k := range ch {
+				accounts[k].SetNonce(clients[index])
+				if k%200 == 0 {
+					log.Println("init account size: ", i)
+				}
+			}
+		}(i)
 	}
+
+	wg.Wait()
+	fmt.Println("init account completed")
 
 	concurrency := transferOption.ConcurrentNum
 	count := len(accounts) / concurrency
