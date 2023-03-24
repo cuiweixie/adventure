@@ -46,7 +46,7 @@
     "http://34.218.198.69:36657"
   ],
   "CW20Address": "ex1zwv6feuzhy6a9wekh96cd57lsarmqlwxdypdsplw6zhfncqw6ftqwe39pr",
-  "PrivateKeysFile": "./config/devnet/addr_20000_wmt",
+  "PrivateKeysFile": "./config/devnet/acc_priv_1000000",
   "concurrentNum": 3000,
   "threshold": 180000
 }

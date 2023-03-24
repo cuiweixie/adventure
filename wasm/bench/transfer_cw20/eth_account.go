@@ -28,6 +28,7 @@ func generateAccounts(privkeys []string) (accounts []*EthAccount) {
 
 		accounts = append(accounts, &EthAccount{new(sync.Mutex), 0, 0, false, privateKey})
 	}
+	fmt.Println("load private key completed")
 	return
 }
 

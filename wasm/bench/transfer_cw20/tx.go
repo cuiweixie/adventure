@@ -26,7 +26,6 @@ var chainId string
 
 func RunTxs(e func() sdk.AccAddress) {
 	clients := client.GenerateGoSDKClients(transferOption.TendermintUrls) // generate CosmosClient or EthClient
-	accounts := generateAccounts(privateKeys)                             // generate accounts
 	mempoolSizeMap := &sync.Map{}
 
 	chainId = transferOption.ChainId
@@ -40,8 +39,11 @@ func RunTxs(e func() sdk.AccAddress) {
 		}(tendermint)
 	}
 
-	for _, acc := range accounts {
+	for i, acc := range accounts {
 		acc.SetNonce(clients[0])
+		if i%200 == 0 {
+			log.Println("init account size: ", i)
+		}
 	}
 
 	concurrency := transferOption.ConcurrentNum
