@@ -6,9 +6,9 @@
     "http://35.79.254.36:26659"
   ],
   "SuperAcc": "d437f87b57b1acd9f39201994ec52583a874cfd7a7e694b7dba8a5bebac1c2b0",
-  "ContractPath": "",
+  "ContractPath": "./config/devnet/okb_cList.json",
   "WorkerPath": "./config/testnet/addr_100_okbc_testnet_xen_tpb2_2001_2100",
-  "ParaNum": 1,
+  "ParaNum": 1000,
   "SendOKTToWorker": true,
   "Threshold": 0
 }
