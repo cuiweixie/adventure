@@ -3,6 +3,8 @@ package client
 import (
 	"crypto/ecdsa"
 	"fmt"
+	"github.com/okex/adventure/common/util"
+	sdk "github.com/okex/exchain/libs/cosmos-sdk/types"
 	"math/big"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
@@ -80,4 +82,21 @@ func (c *CosmosClient) CreateContract(privatekey *ecdsa.PrivateKey, nonce uint64
 		return ethcmn.Hash{}, err
 	}
 	return ethcmn.HexToHash(res.TxHash), nil
+}
+
+func (c *CosmosClient) SendWasmTx(privateKey *ecdsa.PrivateKey, accNumber, seqNumber uint64, chainId string, memo string, contractAddr string, execMsg string, sender sdk.AccAddress, amountStr string) (string, error) {
+	msg, err := util.ParseExecuteMsg(contractAddr, execMsg, sender, amountStr)
+	if err != nil {
+		return "", err
+	}
+
+	signedTx, _, err := util.BuildStdTx(privateKey, chainId, memo, []sdk.Msg{msg}, accNumber, seqNumber)
+	if err != nil {
+		return "", err
+	}
+
+	cli := c.Client.Auth().(types.BaseClient)
+	bytes, err := cli.GetCodec().MarshalBinaryLengthPrefixed(signedTx)
+	tx, err := cli.Broadcast(bytes, c.GetConfig().BroadcastMode)
+	return tx.TxHash, err
 }

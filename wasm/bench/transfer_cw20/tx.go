@@ -10,7 +10,6 @@ import (
 	"github.com/okex/exchain/app/crypto/ethsecp256k1"
 	sdk "github.com/okex/exchain/libs/cosmos-sdk/types"
 	"github.com/okex/exchain/libs/cosmos-sdk/x/auth"
-	"github.com/okex/exchain/x/wasm/types"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -188,18 +187,4 @@ func BuildStdTx(privateKey *ecdsa.PrivateKey, chainId string, memo string, msgs 
 	}
 
 	return auth.NewStdTx(signMsg.Msgs, signMsg.Fee, []auth.StdSignature{signature}, signMsg.Memo), string(signMsg.Bytes()), err
-}
-
-func parseExecuteMsg(contractAddr string, execMsg string, sender sdk.AccAddress, amountStr string) (types.MsgExecuteContract, error) {
-	amount, err := sdk.ParseCoinsNormalized(amountStr)
-	if err != nil {
-		return types.MsgExecuteContract{}, err
-	}
-
-	return types.MsgExecuteContract{
-		Sender:   sender.String(),
-		Contract: contractAddr,
-		Funds:    sdk.CoinsToCoinAdapters(amount),
-		Msg:      []byte(execMsg),
-	}, nil
 }
