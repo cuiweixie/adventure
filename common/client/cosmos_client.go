@@ -109,7 +109,7 @@ func (c *CosmosClient) SendCosmosTx(signedTx *auth.StdTx) (string, error) {
 		return "", errors.Wrap(err, "MarshalJSON fail")
 	}
 
-	tx, err := cli.Broadcast(txBytes, c.GetConfig().BroadcastMode)
+	tx, err := cli.Broadcast(txBytes, "block")
 	return tx.TxHash, err
 }
 
