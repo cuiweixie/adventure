@@ -39,6 +39,7 @@ func NewCW20Bench(option *options.CW20TransferOption) (*cw20Bench, error) {
 	if err := initAccounts(accounts, clients); err != nil {
 		return nil, err
 	}
+	fmt.Println("complete init account")
 
 	buildTxFn := func(sender int, accounts []*account.Account) (stdTx []*auth.StdTx) {
 		account := accounts[sender]
