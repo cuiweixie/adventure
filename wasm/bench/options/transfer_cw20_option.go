@@ -1,7 +1,7 @@
 package options
 
-type TransferOption struct {
-	PrivateKeysFile string   `json:"PrivateKeysFile"`
+type CW20TransferOption struct {
+	PrivateKeysFile string   `json:"privateKeysFile"`
 	RestUrls        []string `json:"restUrls"`
 	TendermintUrls  []string `json:"tendermintUrls"`
 	CW20Address     string   `json:"CW20Address"`

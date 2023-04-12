@@ -1,5 +1,5 @@
 {
-  "RestUrlsRestUrls": [
+  "restUrls": [
     "http://44.236.71.233:26659",
     "http://3.113.237.222:26659",
     "http://3.113.237.222:36659",
@@ -22,7 +22,7 @@
     "http://34.218.198.69:26659",
     "http://34.218.198.69:36659"
   ],
-  "TendermintUrls": [
+  "tendermintUrls": [
     "http://44.236.71.233:26657",
     "http://3.113.237.222:26657",
     "http://3.113.237.222:36657",
@@ -46,7 +46,7 @@
     "http://34.218.198.69:36657"
   ],
   "CW20Address": "ex1zwv6feuzhy6a9wekh96cd57lsarmqlwxdypdsplw6zhfncqw6ftqwe39pr",
-  "PrivateKeysFile": "./config/devnet/acc_priv_1000000",
-  "concurrentNum": 3000,
+  "privateKeysFile": "./config/devnet/addr_50000_transfer",
+  "concurrentNum": 10,
   "threshold": 180000
 }

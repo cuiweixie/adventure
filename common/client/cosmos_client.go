@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/okex/adventure/common/util"
 	sdk "github.com/okex/exchain/libs/cosmos-sdk/types"
+	"github.com/okex/exchain/libs/cosmos-sdk/x/auth"
 	"math/big"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
@@ -68,6 +69,14 @@ func (c *CosmosClient) QueryNonce(hexAddr string) (uint64, error) {
 	return account.GetSequence(), nil
 }
 
+func (c *CosmosClient) QueryChainID() (string, error) {
+	status, err := c.Client.Tendermint().QueryStatus()
+	if err != nil {
+		return "", err
+	}
+	chainID := status.NodeInfo.Network
+	return chainID, nil
+}
 func (c *CosmosClient) SendEthereumTx(privatekey *ecdsa.PrivateKey, nonce uint64, to ethcmn.Address, amount *big.Int, gasLimit uint64, gasPrice *big.Int, data []byte) (ethcmn.Hash, error) {
 	res, err := c.Evm().SendTxEthereum(privatekey, nonce, to, amount, gasLimit, gasPrice, data)
 	if err != nil {
@@ -82,6 +91,13 @@ func (c *CosmosClient) CreateContract(privatekey *ecdsa.PrivateKey, nonce uint64
 		return ethcmn.Hash{}, err
 	}
 	return ethcmn.HexToHash(res.TxHash), nil
+}
+
+func (c *CosmosClient) SendCosmosTx(signedTx *auth.StdTx) (string, error) {
+	cli := c.Client.Auth().(types.BaseClient)
+	bytes, err := cli.GetCodec().MarshalBinaryLengthPrefixed(signedTx)
+	tx, err := cli.Broadcast(bytes, c.GetConfig().BroadcastMode)
+	return tx.TxHash, err
 }
 
 func (c *CosmosClient) SendWasmTx(privateKey *ecdsa.PrivateKey, accNumber, seqNumber uint64, chainId string, memo string, contractAddr string, execMsg string, sender sdk.AccAddress, amountStr string) (string, error) {

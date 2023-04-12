@@ -1,8 +1,7 @@
 package bench
 
 import (
-	"github.com/okex/adventure/wasm/bench/transfer_cw20"
-	"github.com/okex/adventure/wasm/bench/transfer_okt"
+	"github.com/okex/adventure/wasm/bench/case/cw20"
 	"github.com/spf13/cobra"
 )
 
@@ -12,9 +11,10 @@ func BenchCmd() *cobra.Command {
 		Short: "subcommands are used for benchmarking performance test",
 	}
 
+	cw20case := cw20.NewCW20Case()
+
 	cmd.AddCommand(
-		transfer_cw20.TransferCmd(),
-		transfer_okt.TransferCmd(),
+		cw20case.NewBenchCmd(),
 	)
 	return cmd
 }

@@ -4,7 +4,7 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	ethcmm "github.com/ethereum/go-ethereum/common"
-	gosdk "github.com/okex/exchain-go-sdk"
+	"github.com/okex/adventure/common/client"
 	sdk "github.com/okex/exchain/libs/cosmos-sdk/types"
 	"sync"
 
@@ -55,9 +55,10 @@ func (a *Account) Unlock() {
 	a.lock.Unlock()
 }
 
-func (a *Account) Init(cli *gosdk.Client) error {
+func (a *Account) Init(cli *client.CosmosClient) error {
 	account, err := cli.Auth().QueryAccount(a.bech32Address.Bech32StringOptimized("ex"))
 	if err != nil {
+		fmt.Println(err)
 		return err
 	}
 	a.nonce = account.GetSequence()
@@ -87,4 +88,8 @@ func (a *Account) GetPrivateKey() *ecdsa.PrivateKey {
 
 func (a *Account) GetHexAddress() *ethcmm.Address {
 	return a.hexAddres
+}
+
+func (a *Account) GetBech32Address() *sdk.AccAddress {
+	return a.bech32Address
 }
