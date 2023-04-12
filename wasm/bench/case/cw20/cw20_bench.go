@@ -97,7 +97,6 @@ func initAccounts(accounts []*account.Account, clients []*client.CosmosClient) e
 			for i := start; i < end; i++ {
 				account := accounts[i]
 				for account.Init(client) != nil {
-					fmt.Println(account.GetHexAddress(), "init failed")
 					time.Sleep(500 * time.Millisecond)
 				}
 				if i%200 == 0 {

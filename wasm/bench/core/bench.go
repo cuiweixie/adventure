@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"github.com/okex/adventure/common/client"
 	"github.com/okex/adventure/wasm/bench/common/account"
 	"github.com/okex/exchain/libs/cosmos-sdk/x/auth"
@@ -44,8 +45,10 @@ func (b *BaseBench) StopBench() {
 func execute(client *client.CosmosClient, txs []*auth.StdTx) {
 	for i := range txs {
 		for {
-			_, err := client.SendCosmosTx(txs[i])
+			hash, err := client.SendCosmosTx(txs[i])
+			fmt.Println(hash)
 			if err == nil {
+
 				break
 			}
 			log.Println(err)
