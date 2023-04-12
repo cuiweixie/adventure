@@ -87,7 +87,7 @@ func initAccounts(accounts []*account.Account, clients []*client.CosmosClient) e
 
 			start := gIndex * gap
 			end := (gIndex + 1) * gap
-			if i == goroutineNum-1 && remain != 0 {
+			if gIndex == goroutineNum-1 && remain != 0 {
 				end += remain
 			}
 
