@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"github.com/okex/adventure/common/util"
 	sdk "github.com/okex/exchain/libs/cosmos-sdk/types"
+	"github.com/okex/exchain/libs/cosmos-sdk/types/errors"
 	"github.com/okex/exchain/libs/cosmos-sdk/x/auth"
 	"math/big"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
+	cmwraptx "github.com/okex/adventure/common/types"
 	gosdk "github.com/okex/exchain-go-sdk"
 	"github.com/okex/exchain-go-sdk/types"
 	"github.com/okex/exchain-go-sdk/utils"
@@ -96,7 +98,18 @@ func (c *CosmosClient) CreateContract(privatekey *ecdsa.PrivateKey, nonce uint64
 func (c *CosmosClient) SendCosmosTx(signedTx *auth.StdTx) (string, error) {
 	cli := c.Client.Auth().(types.BaseClient)
 	bytes, err := cli.GetCodec().MarshalBinaryLengthPrefixed(signedTx)
-	tx, err := cli.Broadcast(bytes, c.GetConfig().BroadcastMode)
+
+	wrapedTx := &cmwraptx.WrapCMTx{
+		Tx:    bytes,
+		Nonce: signedTx.GetNonce(),
+	}
+
+	txBytes, err := cli.GetCodec().MarshalJSON(wrapedTx)
+	if err != nil {
+		return "", errors.Wrap(err, "MarshalJSON fail")
+	}
+
+	tx, err := cli.Broadcast(txBytes, c.GetConfig().BroadcastMode)
 	return tx.TxHash, err
 }
 

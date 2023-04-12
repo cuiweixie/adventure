@@ -48,7 +48,6 @@ func execute(client *client.CosmosClient, txs []*auth.StdTx) {
 			hash, err := client.SendCosmosTx(txs[i])
 			fmt.Println(hash)
 			if err == nil {
-
 				break
 			}
 			log.Println(err)
