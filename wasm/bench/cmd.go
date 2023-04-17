@@ -11,10 +11,11 @@ func BenchCmd() *cobra.Command {
 		Short: "subcommands are used for benchmarking performance test",
 	}
 
-	cw20case := cw20.NewCW20Case()
+	cw20Cmd := cw20.NewCW20Cmd()
 
 	cmd.AddCommand(
-		cw20case.NewBenchCmd(),
+		cw20Cmd.NewBenchCmd(),
+		cw20Cmd.NewConfigCmd(),
 	)
 	return cmd
 }

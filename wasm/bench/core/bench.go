@@ -1,10 +1,9 @@
 package core
 
 import (
-	"fmt"
 	"github.com/okex/adventure/common/client"
+	cmwraptx "github.com/okex/adventure/common/types"
 	"github.com/okex/adventure/wasm/bench/common/account"
-	"github.com/okex/exchain/libs/cosmos-sdk/x/auth"
 	"log"
 	"time"
 )
@@ -12,7 +11,7 @@ import (
 type BaseBench struct {
 	Accounts          []*account.Account
 	Concurrency       int
-	BuildTxFn         func(sender int, accounts []*account.Account) (stdTx []*auth.StdTx)
+	BuildTxFn         func(sender int, accounts []*account.Account, client *client.CosmosClient) (stdTx []*cmwraptx.WrapCMTx)
 	TendermintClients []*client.CosmosClient
 }
 
@@ -27,7 +26,7 @@ func (b *BaseBench) StartBench() {
 			for {
 				for index := gIndex * count; index < (gIndex+1)*count; index++ {
 					client := b.TendermintClients[gIndex%len(b.TendermintClients)]
-					stdTxs := b.BuildTxFn(index, b.Accounts)
+					stdTxs := b.BuildTxFn(index, b.Accounts, client)
 
 					execute(client, stdTxs)
 				}
@@ -42,11 +41,10 @@ func (b *BaseBench) StopBench() {
 
 }
 
-func execute(client *client.CosmosClient, txs []*auth.StdTx) {
+func execute(client *client.CosmosClient, txs []*cmwraptx.WrapCMTx) {
 	for i := range txs {
 		for {
-			hash, err := client.SendCosmosTx(txs[i])
-			fmt.Println(hash)
+			_, err := client.SendCosmosTx(txs[i])
 			if err == nil {
 				break
 			}

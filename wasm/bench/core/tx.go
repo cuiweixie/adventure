@@ -9,7 +9,7 @@ import (
 	"github.com/okex/exchain/x/wasm/types"
 )
 
-func BuildWasmTx(privateKey *ecdsa.PrivateKey, accNumber, seqNumber uint64, chainId string, memo string, contractAddr string, execMsg string, sender sdk.AccAddress, amountStr string) (stdTx *auth.StdTx, err error) {
+func BuildWasmTx(privateKey *ecdsa.PrivateKey, accNumber, seqNumber uint64, chainId string, memo string, contractAddr string, execMsg string, sender string, amountStr string) (stdTx *auth.StdTx, err error) {
 	msg, err := parseExecuteMsg(contractAddr, execMsg, sender, amountStr)
 	if err != nil {
 		return nil, err
@@ -47,14 +47,14 @@ func buildStdTx(privateKey *ecdsa.PrivateKey, chainId string, memo string, msgs 
 	return auth.NewStdTx(signMsg.Msgs, signMsg.Fee, []auth.StdSignature{signature}, signMsg.Memo), string(signMsg.Bytes()), err
 }
 
-func parseExecuteMsg(contractAddr string, execMsg string, sender sdk.AccAddress, amountStr string) (types.MsgExecuteContract, error) {
+func parseExecuteMsg(contractAddr string, execMsg string, sender string, amountStr string) (types.MsgExecuteContract, error) {
 	amount, err := sdk.ParseCoinsNormalized(amountStr)
 	if err != nil {
 		return types.MsgExecuteContract{}, err
 	}
 
 	return types.MsgExecuteContract{
-		Sender:   sender.String(),
+		Sender:   sender,
 		Contract: contractAddr,
 		Funds:    sdk.CoinsToCoinAdapters(amount),
 		Msg:      []byte(execMsg),
