@@ -15,10 +15,6 @@ type BaseBench struct {
 	TendermintClients []*client.CosmosClient
 }
 
-func NewBaseBench() {
-
-}
-
 func (b *BaseBench) StartBench() {
 	count := len(b.Accounts) / b.Concurrency
 	for i := 0; i < b.Concurrency; i++ {
@@ -38,7 +34,7 @@ func (b *BaseBench) StartBench() {
 }
 
 func (b *BaseBench) StopBench() {
-
+	//todo
 }
 
 func execute(client *client.CosmosClient, txs []*cmwraptx.WrapCMTx) {
