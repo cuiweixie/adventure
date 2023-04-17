@@ -2,6 +2,7 @@ package bench
 
 import (
 	"github.com/okex/adventure/wasm/bench/case/cw20"
+	"github.com/okex/adventure/wasm/bench/case/okt"
 	"github.com/spf13/cobra"
 )
 
@@ -12,10 +13,13 @@ func BenchCmd() *cobra.Command {
 	}
 
 	cw20Cmd := cw20.NewCW20Cmd()
+	oktCmd := okt.NewCW20Cmd()
 
 	cmd.AddCommand(
 		cw20Cmd.NewBenchCmd(),
 		cw20Cmd.NewConfigCmd(),
+		oktCmd.NewBenchCmd(),
+		oktCmd.NewConfigCmd(),
 	)
 	return cmd
 }

@@ -4,7 +4,7 @@ type CW20TransferOption struct {
 	PrivateKeysFile string   `json:"privateKeysFile"`
 	RestUrls        []string `json:"restUrls"`
 	TendermintUrls  []string `json:"tendermintUrls"`
-	CW20Address     string   `json:"cw20Address"`
+	ContractAddress string   `json:"contractAddress"`
 	WasmFilePath    string   `json:"wasmFilePath"`
 	ConcurrentNum   int      `json:"concurrentNum"`
 	Threshold       int      `json:"threshold"`

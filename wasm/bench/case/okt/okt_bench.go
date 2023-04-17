@@ -1,4 +1,4 @@
-package cw20
+package okt
 
 import (
 	"fmt"
@@ -15,11 +15,11 @@ import (
 	"time"
 )
 
-type cw20Bench struct {
+type oktBench struct {
 	core.BaseBench
 }
 
-func NewCW20Bench(option *options.CW20TransferOption) (*cw20Bench, error) {
+func NewOKTBench(option *options.CW20TransferOption) (*oktBench, error) {
 	clients, err := client.GenerateCosmosClients(option.TendermintUrls) // generate CosmosClient
 	if err != nil {
 		return nil, err
@@ -69,7 +69,7 @@ func NewCW20Bench(option *options.CW20TransferOption) (*cw20Bench, error) {
 			return nil, errors.Wrap(err, "deploy cw20 contract failed")
 		}
 		option.ContractAddress = addr
-		log.Println("deploy cw20 success: ", addr)
+		log.Println("deploy wasm okt contract success: ", addr)
 
 		// reinit account 0
 		for accounts[0].Init(clients[0]) != nil {
@@ -81,8 +81,8 @@ func NewCW20Bench(option *options.CW20TransferOption) (*cw20Bench, error) {
 		account := accounts[sender]
 		defer account.AddNonce()
 
-		execMsg := fmt.Sprintf(`{"transfer": {"amount":"1", "recipient":"%s"}}`, randAddress(accounts))
-		tx, err := core.BuildWasmTx(account.GetPrivateKey(), account.GetAccountNumber(), account.GetNonce(), option.ChainId, "", option.ContractAddress, execMsg, (*account).GetHexAddress().String(), "")
+		execMsg := fmt.Sprintf(`{"transfer":{"recipient":"%s"}}`, randAddress(accounts))
+		tx, err := core.BuildWasmTx(account.GetPrivateKey(), account.GetAccountNumber(), account.GetNonce(), option.ChainId, "", option.ContractAddress, execMsg, (*account).GetHexAddress().String(), "1okt")
 		if err != nil {
 			panic(err)
 		}
@@ -98,7 +98,7 @@ func NewCW20Bench(option *options.CW20TransferOption) (*cw20Bench, error) {
 		return []*cmwraptx.WrapCMTx{wrapedTx}
 	}
 
-	bench := cw20Bench{
+	bench := oktBench{
 		core.BaseBench{
 			Accounts:          accounts,
 			Concurrency:       option.ConcurrentNum,
