@@ -74,3 +74,62 @@ adventure evm bench wmt -i ${ip1},${ip2},${ip3}  -c 250
   * 6: eth_getTransactionReceipt
   * 7: net_version
   * 8: eth_call
+
+
+## wasm 压测
+### 压测 cw20 转账
+在对应目录准备好配置文件，如下：
+```json
+{
+  "restUrls": [
+    "http://127.0.0.1:8545"
+  ],
+  "tendermintUrls": [
+    "http://127.0.0.1:26657"
+  ],
+  "wasmFilePath": "./config/devnet/wasm_contract/cw20.wasm",
+  "contractAddress": "",
+  "privateKeysFile": "./config/devnet/acc_pri_10",
+  "concurrentNum": 1,
+  "threshold": 180000
+}
+```
+
+生成默认模板配置，将在控制台输入模板配置文件信息
+```shell
+ adventure wasm bench cw20-config
+```
+
+执行命令开启压测，如果合约地址位空，将自动部署合约
+```shell
+adventure wasm bench cw20 --f config/devnet/cw20-local.json
+```
+
+### 压测 OKT 原生代币转账
+在对应目录准备好配置文件，如下：
+```json
+{
+  "restUrls": [
+    "http://127.0.0.1:8545"
+  ],
+  "tendermintUrls": [
+    "http://127.0.0.1:26657"
+  ],
+  "wasmFilePath": "./config/devnet/wasm_contract/okt.wasm",
+  "contractAddress": "",
+  "privateKeysFile": "./config/devnet/acc_pri_10",
+  "concurrentNum": 1,
+  "threshold": 180000
+}
+```
+
+生成默认模板配置，将在控制台输入模板配置文件信息
+```shell
+ adventure wasm bench okt-config
+```
+
+执行命令开启压测，如果合约地址位空，将自动部署合约
+```shell
+adventure wasm bench okt --f config/devnet/cwokt-local.json
+```
+
