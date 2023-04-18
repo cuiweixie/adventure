@@ -23,7 +23,6 @@ func (b *BaseBench) StartBench() {
 				for index := gIndex * count; index < (gIndex+1)*count; index++ {
 					client := b.TendermintClients[gIndex%len(b.TendermintClients)]
 					stdTxs := b.BuildTxFn(index, b.Accounts, client)
-
 					execute(client, stdTxs)
 				}
 			}

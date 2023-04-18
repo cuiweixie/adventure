@@ -1,4 +1,4 @@
-package okt
+package cwokt
 
 import (
 	"fmt"
@@ -15,11 +15,11 @@ import (
 	"time"
 )
 
-type oktBench struct {
+type cwoktBench struct {
 	core.BaseBench
 }
 
-func NewOKTBench(option *options.CW20TransferOption) (*oktBench, error) {
+func NewCWOKTBench(option *options.CWTransferOption) (*cwoktBench, error) {
 	clients, err := client.GenerateCosmosClients(option.TendermintUrls) // generate CosmosClient
 	if err != nil {
 		return nil, err
@@ -49,21 +49,7 @@ func NewOKTBench(option *options.CW20TransferOption) (*oktBench, error) {
 			return nil, fmt.Errorf("should provide wasm file")
 		}
 
-		initMsg := fmt.Sprintf(`{
-          "name": "USDT",
-          "symbol": "USDT",
-          "decimals": 9,
-          "initial_balances": [
-            {
-              "address": "%s",
-              "amount": "100000000000000000000"
-            }
-          ],
-          "mint": {
-            "minter": "%s",
-            "cap": "100000000000000000000000000"
-          }
-        }`, accounts[0].GetHexAddress().String(), accounts[0].GetHexAddress().String())
+		initMsg := `{}`
 		addr, err := deployCW20(accounts[0], clients[0], option.WasmFilePath, initMsg)
 		if err != nil {
 			return nil, errors.Wrap(err, "deploy cw20 contract failed")
@@ -98,7 +84,7 @@ func NewOKTBench(option *options.CW20TransferOption) (*oktBench, error) {
 		return []*cmwraptx.WrapCMTx{wrapedTx}
 	}
 
-	bench := oktBench{
+	bench := cwoktBench{
 		core.BaseBench{
 			Accounts:          accounts,
 			Concurrency:       option.ConcurrentNum,

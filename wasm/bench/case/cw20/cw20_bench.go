@@ -19,7 +19,7 @@ type cw20Bench struct {
 	core.BaseBench
 }
 
-func NewCW20Bench(option *options.CW20TransferOption) (*cw20Bench, error) {
+func NewCW20Bench(option *options.CWTransferOption) (*cw20Bench, error) {
 	clients, err := client.GenerateCosmosClients(option.TendermintUrls) // generate CosmosClient
 	if err != nil {
 		return nil, err

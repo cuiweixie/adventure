@@ -1,4 +1,4 @@
-package okt
+package cwokt
 
 import (
 	"encoding/json"
@@ -10,18 +10,18 @@ import (
 	"os"
 )
 
-type oktCmd struct {
+type cwoktCmd struct {
 	configPath string
-	option     *options.CW20TransferOption
+	option     *options.CWTransferOption
 }
 
-func NewCW20Cmd() *oktCmd {
-	return &oktCmd{}
+func NewCW20Cmd() *cwoktCmd {
+	return &cwoktCmd{}
 }
 
-func (b *oktCmd) NewBenchCmd() *cobra.Command {
+func (b *cwoktCmd) NewBenchCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "okt",
+		Use:   "cwokt",
 		Short: "send native token to address",
 		Run:   b.Run,
 	}
@@ -30,12 +30,12 @@ func (b *oktCmd) NewBenchCmd() *cobra.Command {
 	return cmd
 }
 
-func (b *oktCmd) NewConfigCmd() *cobra.Command {
+func (b *cwoktCmd) NewConfigCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "okt-config",
+		Use:   "cwokt-config",
 		Short: "Generate a empty config for okt bench",
 		Run: func(cmd *cobra.Command, args []string) {
-			option := options.CW20TransferOption{}
+			option := options.CWTransferOption{}
 			bytes, _ := json.Marshal(option)
 			fmt.Println(string(bytes))
 		},
@@ -43,7 +43,7 @@ func (b *oktCmd) NewConfigCmd() *cobra.Command {
 	return cmd
 }
 
-func (b *oktCmd) Run(cmd *cobra.Command, args []string) {
+func (b *cwoktCmd) Run(cmd *cobra.Command, args []string) {
 	if b.configPath == "" {
 		panic(errors.New("configPath must be not empty "))
 	}
@@ -53,7 +53,7 @@ func (b *oktCmd) Run(cmd *cobra.Command, args []string) {
 		panic(err)
 	}
 
-	bench, err := NewOKTBench(b.option)
+	bench, err := NewCWOKTBench(b.option)
 	if err != nil {
 		panic(err)
 	}
@@ -61,7 +61,7 @@ func (b *oktCmd) Run(cmd *cobra.Command, args []string) {
 	bench.StartBench()
 }
 
-func (b *oktCmd) LoadConfig() error {
+func (b *cwoktCmd) LoadConfig() error {
 	file, err := os.Open(b.configPath)
 	if err != nil {
 		return err
@@ -74,7 +74,7 @@ func (b *oktCmd) LoadConfig() error {
 
 	defer file.Close()
 
-	var option options.CW20TransferOption
+	var option options.CWTransferOption
 
 	if err := json.Unmarshal(data, &option); err != nil {
 		return err

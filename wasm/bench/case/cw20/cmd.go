@@ -12,7 +12,7 @@ import (
 
 type cw20Cmd struct {
 	configPath string
-	option     *options.CW20TransferOption
+	option     *options.CWTransferOption
 }
 
 func NewCW20Cmd() *cw20Cmd {
@@ -35,7 +35,7 @@ func (b *cw20Cmd) NewConfigCmd() *cobra.Command {
 		Use:   "cw20-config",
 		Short: "Generate a empty config for cw20 bench",
 		Run: func(cmd *cobra.Command, args []string) {
-			option := options.CW20TransferOption{}
+			option := options.CWTransferOption{}
 			bytes, _ := json.Marshal(option)
 			fmt.Println(string(bytes))
 		},
@@ -74,7 +74,7 @@ func (b *cw20Cmd) LoadConfig() error {
 
 	defer file.Close()
 
-	var option options.CW20TransferOption
+	var option options.CWTransferOption
 
 	if err := json.Unmarshal(data, &option); err != nil {
 		return err
