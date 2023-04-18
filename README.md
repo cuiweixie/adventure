@@ -78,6 +78,11 @@ adventure evm bench wmt -i ${ip1},${ip2},${ip3}  -c 250
 
 ## wasm 压测
 ### 压测 cw20 转账
+#### 转手续费
+10个okt够用了
+```shell
+adventure evm batch-transfer 10 -i http://localhost:8545 -a config/devnet/address_10 -s 8ff3ca2d9985c3a52b459e2f6e7822b23e1af845961e22128d5f372fb9aa5f17
+```
 在对应目录准备好配置文件，如下：
 ```json
 {
@@ -106,6 +111,12 @@ adventure wasm bench cw20 --f config/devnet/cw20-local.json
 ```
 
 ### 压测 OKT 原生代币转账
+#### 转手续费
+有多少个账户参与压测（配置文件里用到的账户文件） 就给每个账户转多少个okt
+```shell
+adventure evm batch-transfer 100000 -i http://localhost:8545 -a config/devnet/address_10 -s 8ff3ca2d9985c3a52b459e2f6e7822b23e1af845961e22128d5f372fb9aa5f17
+```
+
 在对应目录准备好配置文件，如下：
 ```json
 {

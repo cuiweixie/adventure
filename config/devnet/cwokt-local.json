@@ -5,7 +5,7 @@
   "tendermintUrls": [
     "http://127.0.0.1:26657"
   ],
-  "wasmFilePath": "./config/devnet/wasm_contract/cw20.wasm",
+  "wasmFilePath": "./config/devnet/wasm_contract/cwokt.wasm",
   "contractAddress": "",
   "privateKeysFile": "./config/devnet/acc_pri_10",
   "concurrentNum": 1,
