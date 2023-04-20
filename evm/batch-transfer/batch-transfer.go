@@ -23,6 +23,7 @@ import (
 var (
 	privateKey  string
 	addressFile string
+	amount      int
 )
 
 func batchTransfer(cmd *cobra.Command, args []string) {

@@ -3,6 +3,9 @@ package client
 import (
 	"crypto/ecdsa"
 	"fmt"
+	gosdk "github.com/okex/exchain-go-sdk"
+	"github.com/okex/exchain-go-sdk/types"
+	"github.com/okex/exchain/x/common"
 	"math/big"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
@@ -36,6 +39,30 @@ func NewClient(ip string) Client {
 func GenerateClients(ips []string) (clients []Client) {
 	for _, ip := range ips {
 		clients = append(clients, NewClient(ip))
+	}
+	return
+}
+
+func GenerateCosmosClients(ips []string) ([]*CosmosClient, error) {
+	clients := make([]*CosmosClient, 0, len(ips))
+	for _, ip := range ips {
+		client, err := NewCosmosClient(ip)
+		if err != nil {
+			return nil, err
+		}
+		clients = append(clients, client)
+	}
+	return clients, nil
+}
+
+func GenerateGoSDKClients(ips []string) (clients []*gosdk.Client) {
+	for _, ip := range ips {
+		cfg, err := types.NewClientConfig(ip, "exchain-64", types.BroadcastSync, "", 2000000, 1.5, "0.0000000001"+common.NativeToken)
+		if err != nil {
+			panic(fmt.Errorf("initialize client failed: %s", err))
+		}
+		cli := gosdk.NewClient(cfg)
+		clients = append(clients, &cli)
 	}
 	return
 }

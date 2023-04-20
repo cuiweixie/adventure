@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/okex/adventure/wasm"
 	"log"
 	"os"
 
@@ -42,6 +43,7 @@ adventure is a very powerful cli tool for OKChain. It supports JSON-file and Sub
 		staking.QueryValidatorsCmd(),
 		version.VersionCmd(),
 		evm.EvmCmd(),
+		wasm.WasmCmd(),
 	)
 
 	if err := mainCmd.Execute(); err != nil {

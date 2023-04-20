@@ -1,0 +1,13 @@
+{
+  "restUrls": [
+    "http://127.0.0.1:8545"
+  ],
+  "tendermintUrls": [
+    "http://127.0.0.1:26657"
+  ],
+  "wasmFilePath": "./config/devnet/wasm_contract/cwokt.wasm",
+  "contractAddress": "",
+  "privateKeysFile": "./config/devnet/acc_pri_10",
+  "concurrentNum": 1,
+  "threshold": 180000
+}

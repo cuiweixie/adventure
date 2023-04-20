@@ -74,3 +74,73 @@ adventure evm bench wmt -i ${ip1},${ip2},${ip3}  -c 250
   * 6: eth_getTransactionReceipt
   * 7: net_version
   * 8: eth_call
+
+
+## wasm 压测
+### 压测 cw20 转账
+#### 转手续费
+10个okt够用了
+```shell
+adventure evm batch-transfer 10 -i http://localhost:8545 -a config/devnet/address_10 -s 8ff3ca2d9985c3a52b459e2f6e7822b23e1af845961e22128d5f372fb9aa5f17
+```
+在对应目录准备好配置文件，如下：
+```json
+{
+  "restUrls": [
+    "http://127.0.0.1:8545"
+  ],
+  "tendermintUrls": [
+    "http://127.0.0.1:26657"
+  ],
+  "wasmFilePath": "./config/devnet/wasm_contract/cw20.wasm",
+  "contractAddress": "",
+  "privateKeysFile": "./config/devnet/acc_pri_10",
+  "concurrentNum": 1,
+  "threshold": 180000
+}
+```
+
+生成默认模板配置，将在控制台输入模板配置文件信息
+```shell
+ adventure wasm bench cw20-config
+```
+
+执行命令开启压测，如果合约地址位空，将自动部署合约
+```shell
+adventure wasm bench cw20 --f config/devnet/cw20-local.json
+```
+
+### 压测 OKT 原生代币转账
+#### 转手续费
+有多少个账户参与压测（配置文件里用到的账户文件） 就给每个账户转多少个okt
+```shell
+adventure evm batch-transfer 100000 -i http://localhost:8545 -a config/devnet/address_10 -s 8ff3ca2d9985c3a52b459e2f6e7822b23e1af845961e22128d5f372fb9aa5f17
+```
+
+在对应目录准备好配置文件，如下：
+```json
+{
+  "restUrls": [
+    "http://127.0.0.1:8545"
+  ],
+  "tendermintUrls": [
+    "http://127.0.0.1:26657"
+  ],
+  "wasmFilePath": "./config/devnet/wasm_contract/okt.wasm",
+  "contractAddress": "",
+  "privateKeysFile": "./config/devnet/acc_pri_10",
+  "concurrentNum": 1,
+  "threshold": 180000
+}
+```
+
+生成默认模板配置，将在控制台输入模板配置文件信息
+```shell
+ adventure wasm bench okt-config
+```
+
+执行命令开启压测，如果合约地址位空，将自动部署合约
+```shell
+adventure wasm bench okt --f config/devnet/cwokt-local.json
+```
+
