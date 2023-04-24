@@ -1,7 +1,6 @@
 package core
 
 import (
-	"fmt"
 	"log"
 	"time"
 
@@ -45,7 +44,7 @@ func execute(client *client.CosmosClient, txs []*cmwraptx.WrapCMTx) {
 			if err == nil {
 				break
 			}
-			fmt.Println(txHash)
+			log.Println(txHash)
 			log.Println(err)
 			time.Sleep(1 * time.Second)
 		}
