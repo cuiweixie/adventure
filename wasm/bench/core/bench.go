@@ -40,9 +40,8 @@ func (b *BaseBench) StopBench() {
 func execute(client *client.CosmosClient, txs []*cmwraptx.WrapCMTx) {
 	for i := range txs {
 		for {
-			txHash, err := client.SendCosmosTx(txs[i])
+			_, err := client.SendCosmosTx(txs[i])
 			if err == nil {
-				log.Println(txHash)
 				break
 			}
 			log.Println(err)
