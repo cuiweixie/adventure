@@ -1,11 +1,13 @@
 package core
 
 import (
+	"fmt"
+	"log"
+	"time"
+
 	"github.com/okex/adventure/common/client"
 	cmwraptx "github.com/okex/adventure/common/types"
 	"github.com/okex/adventure/wasm/bench/common/account"
-	"log"
-	"time"
 )
 
 type BaseBench struct {
@@ -39,10 +41,11 @@ func (b *BaseBench) StopBench() {
 func execute(client *client.CosmosClient, txs []*cmwraptx.WrapCMTx) {
 	for i := range txs {
 		for {
-			_, err := client.SendCosmosTx(txs[i])
+			txHash, err := client.SendCosmosTx(txs[i])
 			if err == nil {
 				break
 			}
+			fmt.Println(txHash)
 			log.Println(err)
 			time.Sleep(1 * time.Second)
 		}
