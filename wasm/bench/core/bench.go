@@ -42,9 +42,9 @@ func execute(client *client.CosmosClient, txs []*cmwraptx.WrapCMTx) {
 		for {
 			txHash, err := client.SendCosmosTx(txs[i])
 			if err == nil {
+				log.Println(txHash)
 				break
 			}
-			log.Println(txHash)
 			log.Println(err)
 			time.Sleep(1 * time.Second)
 		}
