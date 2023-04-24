@@ -111,7 +111,7 @@ func NewCWOperateBench(option *options.CWOperateOption) (*cwoperateBench, error)
 			rAccount := accounts[0]
 			sender := (*rAccount).GetBech32Address()
 			_, err = rClient.SendWasmTx(rAccount.GetPrivateKey(), rAccount.GetAccountNumber(), rAccount.GetNonce(), option.ChainId, "", raddr, routerMsg, *sender, "1okt")
-			//err = initRouter(account[0], clients[0], raddr, routerMsg)
+
 			if err != nil {
 				return nil, errors.Wrap(err, "add route to router contract failed")
 			}

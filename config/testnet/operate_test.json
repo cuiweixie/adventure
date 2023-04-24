@@ -10,6 +10,6 @@
   "WasmOperType":"compute",
   "WasmOperRouter": false,
   "concurrentNum": 1,
-  "threshold": 180000,
-  "chainId": 67,
+  "threshold": 1800,
+  "chainId": "exchain-67"
 }
