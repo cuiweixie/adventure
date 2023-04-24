@@ -3,21 +3,23 @@ package batch_transfer
 import (
 	"crypto/ecdsa"
 	"fmt"
-	sdk "github.com/okex/exchain/libs/cosmos-sdk/types"
 	"log"
 	"math/big"
 	"strings"
 	"time"
 
+	sdk "github.com/okex/exchain/libs/cosmos-sdk/types"
+
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/okex/adventure/common"
-	"github.com/okex/adventure/common/client"
-	"github.com/okex/adventure/evm/constant"
 	evmtypes "github.com/okex/exchain-go-sdk/module/evm/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	"github.com/okex/adventure/common"
+	"github.com/okex/adventure/common/client"
+	"github.com/okex/adventure/evm/constant"
 )
 
 var (
@@ -93,10 +95,27 @@ func loadEnv() (client.Client, *ecdsa.PrivateKey, []ethcmn.Address) {
 	addresses := constant.HexAddresses
 	if addressFile != "" {
 		addresses = common.ReadDataFromFile(addressFile)
+		// make sure addressFile has at least one address or one private key
+		if len(addresses) == 0 {
+			addresses = constant.HexAddresses
+		}
 	}
+
 	hexAddrs := make([]ethcmn.Address, len(addresses), len(addresses))
-	for i, addr := range addresses {
-		hexAddrs[i] = ethcmn.HexToAddress(addr)
+	if !strings.HasPrefix(addresses[0], "0x") {
+		// support private key file input
+		for i, addr := range addresses {
+			privKey, err := crypto.HexToECDSA(addr)
+			if err != nil {
+				log.Println(fmt.Errorf("failed to convert private key string %s, error: %s", addr, err))
+				break
+			}
+			hexAddrs[i] = common.GetEthAddressFromPK(privKey)
+		}
+	} else {
+		for i, addr := range addresses {
+			hexAddrs[i] = ethcmn.HexToAddress(addr)
+		}
 	}
 
 	return cli, privateKey, hexAddrs
