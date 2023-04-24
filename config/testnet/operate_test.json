@@ -1,0 +1,15 @@
+{
+  "PrivateKeysFile": "./config/devnet/acc_pri_10",
+  "restUrls": [
+    "http://127.0.0.1:8545"
+  ],
+  "tendermintUrls": [
+    "http://127.0.0.1:26657"
+  ],
+  "contractAddress": "",
+  "WasmOperType":"compute",
+  "WasmOperRouter": false,
+  "concurrentNum": 1,
+  "threshold": 180000,
+  "chainId": 67,
+}
