@@ -86,12 +86,21 @@ func NewCWOperateBench(option *options.CWOperateOption) (*cwoperateBench, error)
 			return nil, errors.Wrap(err, "deploy wasm contract failed")
 		}
 
+		//Add Nonce for next deployCW20
+		accounts[0].AddNonce()
+		accounts[0].AddNonce()
+
+		log.Printf("deploy wasm %s contract success: %s", option.WasmOperType, addr)
+
 		if option.WasmOperRouter {
 			// deploy router contract
 			raddr, err := deployCW20(accounts[0], clients[0], routerContractPath, "{}")
 			if err != nil {
 				return nil, errors.Wrap(err, "deploy router contract failed")
 			}
+			//Add Nonce for route Deployment
+			accounts[0].AddNonce()
+			accounts[0].AddNonce()
 			// register route
 			switch option.WasmOperType {
 			case "compute":
@@ -115,7 +124,7 @@ func NewCWOperateBench(option *options.CWOperateOption) (*cwoperateBench, error)
 			if err != nil {
 				return nil, errors.Wrap(err, "add route to router contract failed")
 			}
-			log.Printf("register wasm %s contract route success", option.WasmOperType)
+			log.Printf("register wasm %s contract route success: %s", option.WasmOperType, raddr)
 			option.ContractAddress = raddr
 		} else {
 			option.ContractAddress = addr
