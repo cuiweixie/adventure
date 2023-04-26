@@ -159,8 +159,9 @@ adventure wasm bench okt --f config/devnet/cwokt-local.json
     "http://127.0.0.1:26657"
   ],
   "contractAddress": "",
-  "WasmOperType":"compute",
-  "WasmOperRouter": false,
+  "contractPath": "./config/devnet/wasm_contract/readTest.wasm",
+  "routerContractPath": "./config/devnet/wasm_contract/router.wasm",
+  "WasmOperRouter": true,
   "concurrentNum": 1,
   "threshold": 1800,
   "chainId": "exchain-67"
@@ -168,8 +169,8 @@ adventure wasm bench okt --f config/devnet/cwokt-local.json
 ```
 其中需要说明的输入项如下：
 * contractAddress,若合约已经部署，直接填写合约0x地址，否则设为空，此时会自动部署
-* WasmOperType,填写执行操作：compute/read/write
-* WasmOperRouter,是否通过router合约启动测试合约，输入为bool
+* contractPath：合约文件的路径
+* routerContractPath：router合约的路径
 
 cwoperate-config命令展示默认模板配置，将在控制台输入模板配置文件信息
 ```shell
@@ -188,5 +189,9 @@ adventure evm batch-transfer 100000 -i http://localhost:8545 -a ./config/devnet/
 
 执行命令开启压测，如果合约地址位空，将自动部署合约
 ```shell
-adventure wasm bench cwoperate --f config/testnet/operate_test.json
+adventure wasm bench cwoperate --type read --opt 1,1,1,1 --times 1 --f ./config/testnet/operate_test.json
 ```
+其中
+* type字段输入具体执行的操作
+* opt字段输入调用具体操作合约所需要输入的opt
+* times字段输入执行次数
