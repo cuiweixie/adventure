@@ -14,8 +14,14 @@ import (
 
 type cwoperateCmd struct {
 	configPath string
+	operType   string
 	option     *options.CWOperateOption
 }
+
+var (
+	opt   []string
+	times string
+)
 
 func NewCWOperateCmd() *cwoperateCmd {
 	return &cwoperateCmd{}
@@ -27,7 +33,9 @@ func (b *cwoperateCmd) NewBenchCmd() *cobra.Command {
 		Short: "operate wasm RO,WO and EO pressure test",
 		Run:   b.Run,
 	}
-
+	cmd.Flags().StringVar(&b.operType, "type", "", "contract type")
+	cmd.Flags().StringSliceVar(&opt, "opt", []string{}, "contract Msg opt")
+	cmd.Flags().StringVar(&times, "times", "1", "contract Msg times")
 	cmd.Flags().StringVar(&b.configPath, "f", "", "the location of transfer config file")
 	return cmd
 }
@@ -54,6 +62,7 @@ func (b *cwoperateCmd) Run(cmd *cobra.Command, args []string) {
 	if err != nil {
 		panic(err)
 	}
+	b.option.WasmOperType = b.operType
 
 	bench, err := NewCWOperateBench(b.option)
 	if err != nil {

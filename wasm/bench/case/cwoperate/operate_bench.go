@@ -20,18 +20,18 @@ type cwoperateBench struct {
 	core.BaseBench
 }
 
-const (
-	computeContractPath = "./config/devnet/wasm_contract/computeTest.wasm"
-	writeContractPath   = "./config/devnet/wasm_contract/writeTest.wasm"
-	readContractPath    = "./config/devnet/wasm_contract/readTest.wasm"
-	routerContractPath  = "./config/devnet/wasm_contract/router.wasm"
-	computeContractMsg  = `{"operate" : {"opts": ["1","1","1","1","1"],"times":"1"}}`
-	writeContractMsg    = `{"operate" : {"opts": ["1","1","1","1","1","1"],"times":"1"}}`
-	readContractMsg     = `{"operate" : {"opts": ["1","1","1","1"],"times":"1"}}`
-	computeRouterMsg    = `{"operate" : {"contract_name": "computeTest","opts": ["1","1","1","1","1"],"times":"1"}}`
-	writeRouterMsg      = `{"operate" : {"contract_name": "writeTest","opts": ["1","1","1","1","1","1"],"times":"1"}}`
-	readRouterMsg       = `{"operate" : {"contract_name": "readTest","opts": ["1","1","1","1"],"times":"1"}}`
-)
+//const (
+//	computeContractPath = "./config/devnet/wasm_contract/computeTest.wasm"
+//	writeContractPath   = "./config/devnet/wasm_contract/writeTest.wasm"
+//	readContractPath    = "./config/devnet/wasm_contract/readTest.wasm"
+//	routerContractPath  = "./config/devnet/wasm_contract/router.wasm"
+//	computeContractMsg  = `{"operate" : {"opts": ["1","1","1","1","1"],"times":"1"}}`
+//	writeContractMsg    = `{"operate" : {"opts": ["1","1","1","1","1","1"],"times":"1"}}`
+//	readContractMsg     = `{"operate" : {"opts": ["1","1","1","1"],"times":"1"}}`
+//	computeRouterMsg    = `{"operate" : {"contract_name": "computeTest","opts": ["1","1","1","1","1"],"times":"1"}}`
+//	writeRouterMsg      = `{"operate" : {"contract_name": "writeTest","opts": ["1","1","1","1","1","1"],"times":"1"}}`
+//	readRouterMsg       = `{"operate" : {"contract_name": "readTest","opts": ["1","1","1","1"],"times":"1"}}`
+//)
 
 func NewCWOperateBench(option *options.CWOperateOption) (*cwoperateBench, error) {
 	clients, err := client.GenerateCosmosClients(option.TendermintUrls) // generate CosmosClient
@@ -57,85 +57,10 @@ func NewCWOperateBench(option *options.CWOperateOption) (*cwoperateBench, error)
 	}
 	log.Println("complete init account")
 
-	//var initMsg string
-	var contractPath string
-	var routerMsg string
 	var execMsg string
 	// use account[0] to deploy contract
 	if option.ContractAddress == "" {
-		//if option.WasmFilePath == "" {
-		//	return nil, fmt.Errorf("should provide wasm file")
-		//}
-		switch option.WasmOperType {
-		case "compute":
-			contractPath = computeContractPath
-			execMsg = computeContractMsg
-		case "write":
-			contractPath = writeContractPath
-			execMsg = writeContractMsg
-		case "read":
-			contractPath = readContractPath
-			execMsg = readContractMsg
-		default:
-			return nil, errors.Wrap(err, "resolve wasm contract name failed:wrong WasmOperType")
-		}
-
-		addr, err := deployCW20(accounts[0], clients[0], contractPath, "{}")
-
-		if err != nil {
-			return nil, errors.Wrap(err, "deploy wasm contract failed")
-		}
-
-		//Add Nonce for next deployCW20
-		accounts[0].AddNonce()
-		accounts[0].AddNonce()
-
-		log.Printf("deploy wasm %s contract success: %s", option.WasmOperType, addr)
-
-		if option.WasmOperRouter {
-			// deploy router contract
-			raddr, err := deployCW20(accounts[0], clients[0], routerContractPath, "{}")
-			if err != nil {
-				return nil, errors.Wrap(err, "deploy router contract failed")
-			}
-			//Add Nonce for route Deployment
-			accounts[0].AddNonce()
-			accounts[0].AddNonce()
-			// register route
-			switch option.WasmOperType {
-			case "compute":
-				routerMsg = fmt.Sprintf(`{"set_contract":{"contract_name":"computeTest","contract_addr":"%s"}}`, addr)
-				execMsg = computeRouterMsg
-			case "write":
-				routerMsg = fmt.Sprintf(`{"set_contract":{"contract_name":"writeTest","contract_addr":"%s"}}`, addr)
-				execMsg = writeRouterMsg
-			case "read":
-				routerMsg = fmt.Sprintf(`{"set_contract":{"contract_name":"readTest","contract_addr":"%s"}}`, addr)
-				execMsg = readRouterMsg
-			default:
-				return nil, errors.Wrap(err, "resolve wasm contract name failed:wrong WasmOperType")
-			}
-
-			rClient := clients[0]
-			rAccount := accounts[0]
-			sender := (*rAccount).GetBech32Address()
-			_, err = rClient.SendWasmTx(rAccount.GetPrivateKey(), rAccount.GetAccountNumber(), rAccount.GetNonce(), option.ChainId, "", raddr, routerMsg, *sender, "1okt")
-
-			if err != nil {
-				return nil, errors.Wrap(err, "add route to router contract failed")
-			}
-			log.Printf("register wasm %s contract route success: %s", option.WasmOperType, raddr)
-			option.ContractAddress = raddr
-		} else {
-			option.ContractAddress = addr
-		}
-
-		log.Printf("deploy wasm %s contract success: %s", option.WasmOperType, option.ContractAddress)
-
-		// reinit account 0
-		for accounts[0].Init(clients[0]) != nil {
-			time.Sleep(500 * time.Millisecond)
-		}
+		execMsg, err = operateContractDeploy(option, err, accounts, clients)
 	}
 
 	buildTxFn := func(sender int, accounts []*account.Account, client *client.CosmosClient) (stdTx []*cmwraptx.WrapCMTx) {
@@ -169,6 +94,109 @@ func NewCWOperateBench(option *options.CWOperateOption) (*cwoperateBench, error)
 	}
 
 	return &bench, nil
+}
+
+func operateContractDeploy(option *options.CWOperateOption, err error, accounts []*account.Account, clients []*client.CosmosClient) (string, error) {
+	var contractPath string
+	var routerMsg string
+	var execMsg string
+	switch option.WasmOperType {
+	case "compute", "write", "read":
+		if option.ContractPath != "" {
+			contractPath = option.ContractPath
+		} else {
+			return "", errors.Wrap(err, "deploy wasm contract failed:nil path")
+		}
+	default:
+		return "", errors.Wrap(err, "resolve wasm contract name failed:wrong WasmOperType")
+	}
+
+	addr, err := deployCW20(accounts[0], clients[0], contractPath, "{}")
+
+	if err != nil {
+		return "", errors.Wrap(err, "deploy wasm contract failed")
+	}
+
+	//Add Nonce for next deployCW20
+	accounts[0].AddNonce()
+	accounts[0].AddNonce()
+
+	log.Printf("deploy wasm %s contract success: %s", option.WasmOperType, addr)
+
+	if option.WasmOperRouter {
+		// deploy router contract
+		if option.RouterContractPath == "" {
+			return "", errors.Wrap(err, "deploy router contract failed:nil path")
+		}
+		raddr, err := deployCW20(accounts[0], clients[0], option.RouterContractPath, "{}")
+		if err != nil {
+			return "", errors.Wrap(err, "deploy router contract failed")
+		}
+		//Add Nonce for route Deployment
+		accounts[0].AddNonce()
+		accounts[0].AddNonce()
+		// register route
+		switch option.WasmOperType {
+		case "compute":
+			routerMsg = fmt.Sprintf(`{"set_contract":{"contract_name":"computeTest","contract_addr":"%s"}}`, addr)
+		case "write":
+			routerMsg = fmt.Sprintf(`{"set_contract":{"contract_name":"writeTest","contract_addr":"%s"}}`, addr)
+		case "read":
+			routerMsg = fmt.Sprintf(`{"set_contract":{"contract_name":"readTest","contract_addr":"%s"}}`, addr)
+		default:
+			return "", errors.Wrap(err, "resolve wasm contract name failed:wrong WasmOperType")
+		}
+
+		rClient := clients[0]
+		rAccount := accounts[0]
+		sender := (*rAccount).GetBech32Address()
+		_, err = rClient.SendWasmTx(rAccount.GetPrivateKey(), rAccount.GetAccountNumber(), rAccount.GetNonce(), option.ChainId, "", raddr, routerMsg, *sender, "1okt")
+
+		if err != nil {
+			return "", errors.Wrap(err, "add route to router contract failed")
+		}
+		log.Printf("register wasm %s contract route success: %s", option.WasmOperType, raddr)
+		option.ContractAddress = raddr
+	} else {
+		option.ContractAddress = addr
+	}
+
+	//log.Printf("deploy wasm %s contract success: %s", option.WasmOperType, option.ContractAddress)
+
+	execMsg = genExecMsg(option, opt, times)
+
+	// reinit account 0
+	for accounts[0].Init(clients[0]) != nil {
+		time.Sleep(500 * time.Millisecond)
+	}
+
+	return execMsg, nil
+}
+
+//	computeContractMsg  = `{"operate" : {"opts": ["1","1","1","1","1"],"times":"1"}}`
+//	writeContractMsg    = `{"operate" : {"opts": ["1","1","1","1","1","1"],"times":"1"}}`
+//	readContractMsg     = `{"operate" : {"opts": ["1","1","1","1"],"times":"1"}}`
+//	computeRouterMsg    = `{"operate" : {"contract_name": "computeTest","opts": ["1","1","1","1","1"],"times":"1"}}`
+//	writeRouterMsg      = `{"operate" : {"contract_name": "writeTest","opts": ["1","1","1","1","1","1"],"times":"1"}}`
+//	readRouterMsg       = `{"operate" : {"contract_name": "readTest","opts": ["1","1","1","1"],"times":"1"}}`
+
+func genExecMsg(option *options.CWOperateOption, opt []string, times string) string {
+	var optMsg, execMsg string
+	optMsg = "["
+	for i, s := range opt {
+		optMsg += fmt.Sprintf("\"%s\"", s)
+		if i != len(opt)-1 {
+			optMsg += ","
+		}
+	}
+	optMsg += "]"
+
+	if option.WasmOperRouter {
+		execMsg = fmt.Sprintf(`{"operate" : {"contract_name": "%sTest","opts": %s,"times":"%s"}}`, option.WasmOperType, optMsg, times)
+	} else {
+		execMsg = fmt.Sprintf(`{"operate" : {"opts": %s,"times":"%s"}}`, optMsg, times)
+	}
+	return execMsg
 }
 
 func deployCW20(account *account.Account, client *client.CosmosClient, wasmFilePath, initMsg string) (string, error) {
