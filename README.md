@@ -18,7 +18,7 @@ adventure evm batch-transfer 10 -i ${ip} -s ${private_key} -a ${address_file}
   * 对应地址，拥有足够的okt
 * -a: 账户地址文件路径
   * 选填，如果为空，代码默认内置2000个固定账户
-  * 0x地址格式
+  * 目前已经支持直接使用私钥文件，也支持0x地址格式
 
 ### 2.2 压力测试
 公共参数
@@ -144,3 +144,54 @@ adventure evm batch-transfer 100000 -i http://localhost:8545 -a config/devnet/ad
 adventure wasm bench okt --f config/devnet/cwokt-local.json
 ```
 
+### 压测 EO RO WO
+#### 准备工作
+压测分为直接执行compute/read/writeTest和通过router合约执行compute/read/writeTest。压测合约在config/devnet/wasm_contract目录下，代码可以自动部署合约。
+
+准备好配置文件，如下：
+```json
+{
+  "PrivateKeysFile": "./config/devnet/acc_pri_10",
+  "restUrls": [
+    "http://127.0.0.1:8545"
+  ],
+  "tendermintUrls": [
+    "http://127.0.0.1:26657"
+  ],
+  "contractAddress": "",
+  "contractPath": "./config/devnet/wasm_contract/readTest.wasm",
+  "routerContractPath": "./config/devnet/wasm_contract/router.wasm",
+  "WasmOperRouter": true,
+  "concurrentNum": 1,
+  "threshold": 1800,
+  "chainId": "exchain-67"
+}
+```
+其中需要说明的输入项如下：
+* contractAddress,若合约已经部署，直接填写合约0x地址，否则设为空，此时会自动部署
+* contractPath：合约文件的路径
+* routerContractPath：router合约的路径
+
+cwoperate-config命令展示默认模板配置，将在控制台输入模板配置文件信息
+```shell
+ adventure wasm bench cwoperate-config
+```
+
+示例测试文件的路径为：config/testnet/operate_test.json
+
+#### 账户初始化
+压测需要传入私钥，这些私钥需要在链上存在对应的账户和用于支付gas的okt，因此需要进行初始转账。
+
+```shell
+adventure evm batch-transfer 100000 -i http://localhost:8545 -a ./config/devnet/acc_pri_10 -s 8ff3ca2d9985c3a52b459e2f6e7822b23e1af845961e22128d5f372fb9aa5f17
+```
+
+
+执行命令开启压测，如果合约地址位空，将自动部署合约
+```shell
+adventure wasm bench cwoperate --type read --opt 1,1,1,1 --times 1 --f ./config/testnet/operate_test.json
+```
+其中
+* type字段输入具体执行的操作
+* opt字段输入调用具体操作合约所需要输入的opt
+* times字段输入执行次数

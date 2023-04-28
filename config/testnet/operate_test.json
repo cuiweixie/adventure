@@ -1,0 +1,16 @@
+{
+  "PrivateKeysFile": "./config/devnet/acc_pri_10",
+  "RestUrls": [
+    "http://127.0.0.1:8545"
+  ],
+  "TenderMintUrls": [
+    "http://127.0.0.1:26657"
+  ],
+  "contractAddress": "",
+  "contractPath": "./config/devnet/wasm_contract/readTest.wasm",
+  "routerContractPath": "./config/devnet/wasm_contract/router.wasm",
+  "WasmOperRouter": true,
+  "concurrentNum": 1,
+  "threshold": 1800,
+  "chainId": "exchain-67"
+}

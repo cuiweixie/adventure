@@ -1,11 +1,12 @@
 package core
 
 import (
+	"log"
+	"time"
+
 	"github.com/okex/adventure/common/client"
 	cmwraptx "github.com/okex/adventure/common/types"
 	"github.com/okex/adventure/wasm/bench/common/account"
-	"log"
-	"time"
 )
 
 type BaseBench struct {
