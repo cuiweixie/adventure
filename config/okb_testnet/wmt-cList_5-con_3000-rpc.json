@@ -1,0 +1,14 @@
+{
+  "RPC": [
+    "http://35.79.254.36:26659"
+  ],
+  "Node": [
+    "http://35.79.254.36:26657"
+  ],
+  "SuperAcc": "824c346a2b5fa81768c75408202493a9cb0a7f5879ff4988d23da2c6b1afb9cf",
+  "ContractPath": "./config/okb_testnet/cList.json",
+  "WorkerPath": "./config/okb_testnet/addr_20000_wmt",
+  "ParaNum": 3000,
+  "SendOKTToWorker": true,
+  "Threshold": 180000
+}
