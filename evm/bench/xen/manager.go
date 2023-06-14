@@ -196,6 +196,9 @@ func (m *xenManager) Loop() {
 	var wg sync.WaitGroup
 	for index := 0; index < m.paraNum; index++ {
 		index := index
+		if len(tasks[index]) == 0 {
+			continue
+		}
 		wg.Add(1)
 		go func() {
 			m.run(tasks[index])
