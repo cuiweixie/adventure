@@ -151,7 +151,9 @@ func transfers(cli client.Client, privateKey *ecdsa.PrivateKey, nonce uint64, to
 		if err != nil {
 			return fmt.Errorf("failed to pack BatchTransfer parameters, error: %s", err)
 		}
-
+		if end-start < batchNum {
+			totalAmount = big.NewInt(1).Mul(amount, big.NewInt(int64(end-start)))
+		}
 		txhash, err := cli.SendEthereumTx(privateKey, nonce, to, totalAmount, uint64(41000*batchNum), evmtypes.DefaultGasPrice, txdata)
 		if err != nil {
 			return err
