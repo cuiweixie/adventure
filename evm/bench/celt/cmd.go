@@ -61,11 +61,18 @@ func getM() *CeltManager {
 	initClient(c)
 
 	cList := LoadContractList(c.ContractPath)
-	clients := make([]*ethclient.Client, 0)
-	for _, v := range c.RPC {
+	clients := make([]*okcClient, 0)
+	for i, v := range c.RPC {
 		client, err := ethclient.Dial(v)
 		panicerr(err)
-		clients = append(clients, client)
+		var rpc string
+		if len(c.Node) >= i+1 {
+			rpc = c.Node[i]
+		}
+		clients = append(clients, &okcClient{
+			Client: client,
+			rpc:    rpc,
+		})
 	}
 	superAcc := keyToAcc(c.SuperAcc)
 	operator := keyToAcc(c.Operator)

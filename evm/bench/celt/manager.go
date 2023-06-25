@@ -24,6 +24,7 @@ import (
 // CeltConfig define CeltConfig
 type CeltConfig struct {
 	RPC             []string
+	Node            []string
 	ContractPath    string
 	Operator        string
 	Miner           string
@@ -31,6 +32,7 @@ type CeltConfig struct {
 	WorkerPath      string
 	ParaNum         int
 	SendOKTToWorker bool
+	Threshold       int
 }
 
 // CeltContract define a Celt Project that contains all contract address
@@ -44,15 +46,19 @@ type CeltContract struct {
 	Celt             common.Address
 }
 
-//
 type acc struct {
 	privateKey string
 	ecdsaPriv  *ecdsa.PrivateKey
 	ethAddress common.Address
 }
 
+type okcClient struct {
+	*ethclient.Client
+	rpc string
+}
+
 type CeltManager struct {
-	clientList  []*ethclient.Client
+	clientList  []*okcClient
 	contracList []CeltContract
 	superAcc    *acc
 	operator    *acc
@@ -63,7 +69,7 @@ type CeltManager struct {
 	sendOKTToWorker bool
 }
 
-func newManager(cList []CeltContract, superAcc, operator, miner *acc, workPath string, paraNum int, clients []*ethclient.Client, sendOKTToWorker bool) *CeltManager {
+func newManager(cList []CeltContract, superAcc, operator, miner *acc, workPath string, paraNum int, clients []*okcClient, sendOKTToWorker bool) *CeltManager {
 	m := &CeltManager{
 		clientList:      clients,
 		contracList:     cList,
@@ -191,7 +197,7 @@ func (m *CeltManager) Init() {
 }
 
 func (m *CeltManager) TransferOKTToAccount() {
-	nonce := GetNonce(m.clientList[0], m.superAcc.ecdsaPriv)
+	nonce := GetNonce(m.clientList[0].Client, m.superAcc.ecdsaPriv)
 	txs := make([]*types.Transaction, 0)
 	for _, acc := range m.worker {
 		if m.sendOKTToWorker {
@@ -201,7 +207,7 @@ func (m *CeltManager) TransferOKTToAccount() {
 		}
 	}
 
-	if err := SendTxs(m.clientList[0], txs); err != nil {
+	if err := SendTxs(m.clientList[0].Client, txs); err != nil {
 		panic(err)
 	}
 }
@@ -209,7 +215,7 @@ func (m *CeltManager) TransferOKTToAccount() {
 func (m *CeltManager) InitMint() error {
 	for _, contract := range m.contracList {
 		txList := make([]*types.Transaction, 0, len(m.worker)*2)
-		nonce := GetNonce(m.clientList[0], m.operator.ecdsaPriv)
+		nonce := GetNonce(m.clientList[0].Client, m.operator.ecdsaPriv)
 		for i, account := range m.worker {
 			// supreme mintSudo
 			payload, err := abi_bin.SurpemeBuilder.Build("mintSudo", account.ethAddress, big.NewInt(int64(i+1)))
@@ -230,7 +236,7 @@ func (m *CeltManager) InitMint() error {
 		}
 
 		// send txs
-		if err := SendTxs(m.clientList[0], txList); err != nil {
+		if err := SendTxs(m.clientList[0].Client, txList); err != nil {
 			return err
 		}
 	}
@@ -241,7 +247,7 @@ func (m *CeltManager) InitMint() error {
 func (m *CeltManager) InitCeltTransfer() error {
 	for _, contract := range m.contracList {
 		txList := make([]*types.Transaction, 0, len(m.worker)*2)
-		nonce := GetNonce(m.clientList[0], m.miner.ecdsaPriv)
+		nonce := GetNonce(m.clientList[0].Client, m.miner.ecdsaPriv)
 		for _, account := range m.worker {
 			// celt transfer
 			payload, err := abi_bin.CeltBuilder.Build("transfer", account.ethAddress, big.NewInt(1000000000))
@@ -254,7 +260,7 @@ func (m *CeltManager) InitCeltTransfer() error {
 		}
 
 		// send txs
-		if err := SendTxs(m.clientList[0], txList); err != nil {
+		if err := SendTxs(m.clientList[0].Client, txList); err != nil {
 			return err
 		}
 	}
@@ -267,7 +273,7 @@ func (m *CeltManager) InitRegister() error {
 		txList := make([]*types.Transaction, 0, len(m.worker))
 		for i := range m.worker {
 			account := m.worker[i]
-			nonce := GetNonce(m.clientList[0], account.ecdsaPriv)
+			nonce := GetNonce(m.clientList[0].Client, account.ecdsaPriv)
 
 			// registerInviter
 			payload, err := abi_bin.InvitationCenterBuilder.Build("registerInviter", StringToBytes32("deadbeef"), big.NewInt(1), "bzh")
@@ -278,7 +284,7 @@ func (m *CeltManager) InitRegister() error {
 			txList = append(txList, SignTxWithNonce(account.ecdsaPriv, contract.InvitationCenter, payload, nonce))
 		}
 
-		if err := SendTxs(m.clientList[0], txList); err != nil {
+		if err := SendTxs(m.clientList[0].Client, txList); err != nil {
 			return err
 		}
 	}
@@ -291,7 +297,7 @@ func (m *CeltManager) InitApprovalForAll() error {
 		txList := make([]*types.Transaction, 0, len(m.worker)*2)
 		for i := range m.worker {
 			account := m.worker[i]
-			nonce := GetNonce(m.clientList[0], account.ecdsaPriv)
+			nonce := GetNonce(m.clientList[0].Client, account.ecdsaPriv)
 
 			// supreme setApprovalForAll
 			payload, err := abi_bin.SurpemeBuilder.Build("setApprovalForAll", contract.CeltManager, true)
@@ -311,7 +317,7 @@ func (m *CeltManager) InitApprovalForAll() error {
 			txList = append(txList, SignTxWithNonce(account.ecdsaPriv, contract.Common, payload, nonce))
 		}
 
-		if err := SendTxs(m.clientList[0], txList); err != nil {
+		if err := SendTxs(m.clientList[0].Client, txList); err != nil {
 			return err
 		}
 	}
@@ -323,7 +329,7 @@ func (m *CeltManager) InitStake() error {
 	for _, contract := range m.contracList {
 		txList := make([]*types.Transaction, 0, len(m.worker))
 		for i, account := range m.worker {
-			nonce := GetNonce(m.clientList[0], account.ecdsaPriv)
+			nonce := GetNonce(m.clientList[0].Client, account.ecdsaPriv)
 			// nftpool stake
 			payload, err := abi_bin.NftPoolBuilder.Build("stake", []*big.Int{big.NewInt(1)}, []*big.Int{big.NewInt(100)}, []*big.Int{big.NewInt(int64(i + 1))})
 			if err != nil {
@@ -333,7 +339,7 @@ func (m *CeltManager) InitStake() error {
 			txList = append(txList, SignTxWithNonce(account.ecdsaPriv, contract.NftPool, payload, nonce))
 		}
 
-		if err := SendTxs(m.clientList[0], txList); err != nil {
+		if err := SendTxs(m.clientList[0].Client, txList); err != nil {
 			return err
 		}
 	}
@@ -351,7 +357,7 @@ func (m *CeltManager) runPool(workIndex int, contractIndex int) error {
 
 	txList = append(txList, tx)
 
-	if err := SendTxs(m.clientList[workIndex%len(m.clientList)], txList); err != nil {
+	if err := SendTxs(m.clientList[workIndex%len(m.clientList)].Client, txList); err != nil {
 		return err
 	}
 
@@ -377,7 +383,7 @@ func (m *CeltManager) run(tasks []int, contractIndex int) {
 func (m *CeltManager) GetRandomTx(workIndex int, contractIndex int) (*types.Transaction, error) {
 	account := m.worker[workIndex]
 	contract := m.contracList[contractIndex]
-	nonce := GetNonce(m.clientList[workIndex%len(m.clientList)], account.ecdsaPriv)
+	nonce := GetNonce(m.clientList[workIndex%len(m.clientList)].Client, account.ecdsaPriv)
 
 	rand.Seed(time.Now().UnixNano())
 	random := rand.Intn(101)
