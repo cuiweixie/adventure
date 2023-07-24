@@ -2,24 +2,32 @@ package client
 
 import (
 	"crypto/ecdsa"
+	"encoding/json"
 	"fmt"
-	"github.com/okex/adventure/common/util"
-	sdk "github.com/okex/exchain/libs/cosmos-sdk/types"
-	"github.com/okex/exchain/libs/cosmos-sdk/types/errors"
+	"io/ioutil"
 	"math/big"
+	"net/http"
 	"strconv"
 	"strings"
+	"time"
+
+	sdk "github.com/okex/exchain/libs/cosmos-sdk/types"
+	"github.com/okex/exchain/libs/cosmos-sdk/types/errors"
+
+	"github.com/okex/adventure/common/util"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
-	cmwraptx "github.com/okex/adventure/common/types"
 	gosdk "github.com/okex/exchain-go-sdk"
 	"github.com/okex/exchain-go-sdk/types"
 	"github.com/okex/exchain-go-sdk/utils"
 	"github.com/okex/exchain/x/common"
+
+	cmwraptx "github.com/okex/adventure/common/types"
 )
 
 type CosmosClient struct {
 	*gosdk.Client
+	Mempoolsize int
 }
 
 func NewCosmosClient(ip string) (*CosmosClient, error) {
@@ -34,9 +42,19 @@ func NewCosmosClient(ip string) (*CosmosClient, error) {
 	}
 	cli := gosdk.NewClient(cfg)
 
-	return &CosmosClient{
+	c := &CosmosClient{
 		&cli,
-	}, nil
+		0,
+	}
+
+	go func() {
+		for {
+			c.Mempoolsize = c.getMempoolSize()
+			time.Sleep(time.Second)
+		}
+	}()
+
+	return c, nil
 }
 
 func queryChainIdFromCosmos(ip string) (string, error) {
@@ -80,6 +98,32 @@ func (c *CosmosClient) QueryChainID() (string, error) {
 	chainID := status.NodeInfo.Network
 	return chainID, nil
 }
+
+func (c *CosmosClient) getMempoolSize() int {
+	var result rpcResult
+	response, err := http.Get(fmt.Sprintf("%s/num_unconfirmed_txs", c.Client.GetConfig().NodeURI))
+	if err != nil {
+		fmt.Println(err)
+		return 0
+	}
+
+	bts, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		fmt.Println(err)
+		return 0
+	}
+
+	err = json.Unmarshal(bts, &result)
+	if err != nil {
+		fmt.Println(err)
+		return 0
+	}
+
+	fmt.Println("mempool size :", result.Result.Total)
+	total, _ := strconv.Atoi(result.Result.Total)
+	return total
+}
+
 func (c *CosmosClient) SendEthereumTx(privatekey *ecdsa.PrivateKey, nonce uint64, to ethcmn.Address, amount *big.Int, gasLimit uint64, gasPrice *big.Int, data []byte) (ethcmn.Hash, error) {
 	res, err := c.Evm().SendTxEthereum(privatekey, nonce, to, amount, gasLimit, gasPrice, data)
 	if err != nil {
@@ -225,6 +269,23 @@ func (c CosmosClient) InstantiateContract(privateKey *ecdsa.PrivateKey, accNumbe
 	return parseContractAddress(txRes.RawLog), nil
 }
 
+func (c *CosmosClient) CreatePair(privateKey *ecdsa.PrivateKey, accNumber, seqNumber uint64, chainId string, memo string, contractAddr string, execMsg string, sender sdk.AccAddress, amountStr string) (string, error) {
+	msg, err := util.ParseExecuteMsg(contractAddr, execMsg, sender, amountStr)
+	if err != nil {
+		return "", err
+	}
+
+	signedTx, _, err := util.BuildStdTx(privateKey, chainId, memo, []sdk.Msg{msg}, accNumber, seqNumber)
+	if err != nil {
+		return "", err
+	}
+
+	cli := c.Client.Auth().(types.BaseClient)
+	bytes, err := cli.GetCodec().MarshalBinaryLengthPrefixed(signedTx)
+	txRes, err := cli.Broadcast(bytes, "block")
+	return parsePairAddress(txRes.RawLog), err
+}
+
 func parseCodeID(str string) uint64 {
 	index := strings.LastIndex(str, ":")
 	codeIDStr := str[index:]
@@ -238,4 +299,19 @@ func parseContractAddress(str string) string {
 	index := strings.Index(str, "address")
 	contractAddr := str[index+18 : index+18+42]
 	return contractAddr
+}
+
+func parsePairAddress(str string) string {
+	index := strings.Index(str, "pair_contract_addr")
+	pairAddr := str[index+29 : index+29+42]
+	return pairAddr
+}
+
+type rpcResult struct {
+	Result MempoolResult `json:"result"`
+}
+type MempoolResult struct {
+	Txs        string `json:"n_txs"`
+	Total      string `json:"total"`
+	TotalBytes string `json:"total_bytes"`
 }

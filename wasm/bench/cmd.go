@@ -6,6 +6,7 @@ import (
 	"github.com/okex/adventure/wasm/bench/case/cw20"
 	"github.com/okex/adventure/wasm/bench/case/cwokt"
 	"github.com/okex/adventure/wasm/bench/case/cwoperate"
+	"github.com/okex/adventure/wasm/bench/case/cwwmt"
 )
 
 func BenchCmd() *cobra.Command {
@@ -17,6 +18,7 @@ func BenchCmd() *cobra.Command {
 	cw20Cmd := cw20.NewCW20Cmd()
 	oktCmd := cwokt.NewCW20Cmd()
 	operateCmd := cwoperate.NewCWOperateCmd()
+	wmtCmd := cwwmt.NewCWWMTCmd()
 
 	cmd.AddCommand(
 		cw20Cmd.NewBenchCmd(),
@@ -25,6 +27,8 @@ func BenchCmd() *cobra.Command {
 		oktCmd.NewConfigCmd(),
 		operateCmd.NewBenchCmd(),
 		operateCmd.NewConfigCmd(),
+		wmtCmd.NewBenchCmd(),
+		wmtCmd.NewConfigCmd(),
 	)
 	return cmd
 }

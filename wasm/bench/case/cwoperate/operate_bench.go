@@ -90,6 +90,7 @@ func NewCWOperateBench(option *options.CWOperateOption) (*cwoperateBench, error)
 			Concurrency:       option.ConcurrentNum,
 			BuildTxFn:         buildTxFn,
 			TendermintClients: clients,
+			MempoolThreshold:  option.Threshold,
 		},
 	}
 

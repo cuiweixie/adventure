@@ -14,6 +14,7 @@ type BaseBench struct {
 	Concurrency       int
 	BuildTxFn         func(sender int, accounts []*account.Account, client *client.CosmosClient) (stdTx []*cmwraptx.WrapCMTx)
 	TendermintClients []*client.CosmosClient
+	MempoolThreshold  int
 }
 
 func (b *BaseBench) StartBench() {
@@ -23,6 +24,11 @@ func (b *BaseBench) StartBench() {
 			for {
 				for index := gIndex * count; index < (gIndex+1)*count; index++ {
 					client := b.TendermintClients[gIndex%len(b.TendermintClients)]
+					if b.MempoolThreshold > 0 && client.Mempoolsize >= b.MempoolThreshold {
+						log.Println("mempool 达到阈值")
+						time.Sleep(200 * time.Millisecond)
+						continue
+					}
 					stdTxs := b.BuildTxFn(index, b.Accounts, client)
 					execute(client, stdTxs)
 				}

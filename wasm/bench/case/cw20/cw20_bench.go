@@ -2,17 +2,19 @@ package cw20
 
 import (
 	"fmt"
+	"log"
+	"sync"
+	"time"
+
+	"github.com/okex/exchain-go-sdk/types"
+	"github.com/okex/exchain/libs/cosmos-sdk/types/errors"
+	"github.com/okex/exchain/libs/tendermint/libs/rand"
+
 	"github.com/okex/adventure/common/client"
 	cmwraptx "github.com/okex/adventure/common/types"
 	"github.com/okex/adventure/wasm/bench/common/account"
 	"github.com/okex/adventure/wasm/bench/core"
 	"github.com/okex/adventure/wasm/bench/options"
-	"github.com/okex/exchain-go-sdk/types"
-	"github.com/okex/exchain/libs/cosmos-sdk/types/errors"
-	"github.com/okex/exchain/libs/tendermint/libs/rand"
-	"log"
-	"sync"
-	"time"
 )
 
 type cw20Bench struct {
@@ -104,6 +106,7 @@ func NewCW20Bench(option *options.CWTransferOption) (*cw20Bench, error) {
 			Concurrency:       option.ConcurrentNum,
 			BuildTxFn:         buildTxFn,
 			TendermintClients: clients,
+			MempoolThreshold:  option.Threshold,
 		},
 	}
 
