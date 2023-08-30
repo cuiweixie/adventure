@@ -1,15 +1,16 @@
 package multiwmt
 
 import (
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/spf13/cobra"
-	"math/big"
 )
 
 var (
 	wmtFile  = "./config/wmt.json"
-	chainID  = new(big.Int).SetUint64(65)
+	chainID  = new(big.Int).SetUint64(1001)
 	signer   = types.NewEIP155Signer(chainID)
 	gasPrice = new(big.Int).SetUint64(1000000000)
 	gasLimit = uint64(3000000)
@@ -66,12 +67,11 @@ func getM() *wmtManager {
 	initClient(c)
 	cList := LoadContractList(c.ContractPath)
 	clients := make([]*okcClient, 0)
-	for i, v := range c.RPC {
+	for _, v := range c.RPC {
 		client, err := ethclient.Dial(v)
 		panicerr(err)
 		clients = append(clients, &okcClient{
 			Client: client,
-			rpc:    c.Node[i],
 		})
 	}
 	superAcc := keyToAcc(c.SuperAcc)
@@ -89,7 +89,6 @@ func wmtInit(cmd *cobra.Command, args []string) {
 
 func wmtTransferGas(cmd *cobra.Command, args []string) {
 	m := getM()
-
 
 	m.TransferGas(10)
 }

@@ -4,24 +4,20 @@ import (
 	"bufio"
 	"context"
 	"crypto/ecdsa"
-	"encoding/json"
 	"fmt"
+	"io"
+	"math/big"
+	"math/rand"
+	"os"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"io"
-	"io/ioutil"
-	"math"
-	"math/big"
-	"math/rand"
-	"net/http"
-	"os"
-	"strconv"
-	"strings"
-	"sync"
-	"time"
 )
 
 type acc struct {
@@ -57,7 +53,6 @@ func (n *nonceManager) getNonce(addr common.Address) uint64 {
 
 type okcClient struct {
 	*ethclient.Client
-	rpc string
 }
 
 type rpcResult struct {
@@ -71,32 +66,57 @@ type MempoolResult struct {
 
 func (okc *okcClient) GetMempoolSize() int {
 
-	if okc.rpc == "" {
-		return math.MaxInt
+	//if okc.rpc == "" {
+	//	return math.MaxInt
+	//}
+	//
+	//var result rpcResult
+	//response, err := http.Get(fmt.Sprintf("%s/num_unconfirmed_txs", okc.rpc))
+	//if err != nil {
+	//	fmt.Println(err)
+	//	return 0
+	//}
+	//
+	//bts, err := ioutil.ReadAll(response.Body)
+	//if err != nil {
+	//	fmt.Println(err)
+	//	return 0
+	//}
+	//
+	//err = json.Unmarshal(bts, &result)
+	//if err != nil {
+	//	fmt.Println(err)
+	//	return 0
+	//}
+	//
+	//fmt.Println("mempool size :", result.Result.Total)
+	//total, _ := strconv.Atoi(result.Result.Total)
+	//return total
+
+	var txcount uint
+	var err error
+
+	for {
+		txcount, err = okc.PendingTransactionCount(context.Background())
+		if err != nil {
+			time.Sleep(1000 * time.Microsecond)
+		} else {
+			break
+		}
 	}
 
-	var result rpcResult
-	response, err := http.Get(fmt.Sprintf("%s/num_unconfirmed_txs", okc.rpc))
-	if err != nil {
-		fmt.Println(err)
-		return 0
+	var curblocknum uint64
+	for {
+		curblocknum, err = okc.BlockNumber(context.Background())
+		if err != nil {
+			time.Sleep(1000 * time.Microsecond)
+		} else {
+			break
+		}
 	}
 
-	bts, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		fmt.Println(err)
-		return 0
-	}
-
-	err = json.Unmarshal(bts, &result)
-	if err != nil {
-		fmt.Println(err)
-		return 0
-	}
-
-	fmt.Println("mempool size :", result.Result.Total)
-	total, _ := strconv.Atoi(result.Result.Total)
-	return total
+	fmt.Printf("Get PendingTransactionCount = %d, Current Block Number is = %d\n", txcount, curblocknum)
+	return int(txcount)
 }
 
 type wmtManager struct {

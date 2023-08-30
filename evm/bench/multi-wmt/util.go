@@ -5,13 +5,14 @@ import (
 	"crypto/ecdsa"
 	"encoding/json"
 	"fmt"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 	"io/ioutil"
 	"math/big"
 	"strings"
 	"time"
+
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 func getPrivateKey(key string) *ecdsa.PrivateKey {
@@ -117,7 +118,6 @@ func SendTxs(client *okcClient, txs []*types.Transaction) error {
 
 type wmtConfig struct {
 	RPC             []string
-	Node            []string
 	ContractPath    string
 	SuperAcc        string
 	WorkerPath      string

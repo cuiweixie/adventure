@@ -1,0 +1,11 @@
+{
+  "RPC": [
+    "http://54.248.60.244:8123"
+  ],
+  "SuperAcc": "de3ca643a52f5543e84ba984c4419ff40dbabd0e483c31c1d09fee8168d68e38",
+  "ContractPath": "./config/poly_test/cList_poly_5.json",
+  "WorkerPath": "./config/poly_test/acc_pri_10",
+  "ParaNum": 5,
+  "SendOKTToWorker": true,
+  "Threshold": 1800
+}
