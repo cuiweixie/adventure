@@ -32,6 +32,17 @@ type nonceManager struct {
 	nonces []uint64
 }
 
+type simpleTPSManager struct {
+	// RWmutex
+	mux sync.RWMutex
+	// time recorder for average TPS, update when counter = 1000
+	aveStartTime time.Time
+	// save last Txpool query
+	lastTxpool int
+	// last Tx sent
+	lastTxsent int
+}
+
 func (n *nonceManager) addrSize() int {
 	n.mu.Lock()
 
@@ -66,33 +77,6 @@ type MempoolResult struct {
 
 func (okc *okcClient) GetMempoolSize() int {
 
-	//if okc.rpc == "" {
-	//	return math.MaxInt
-	//}
-	//
-	//var result rpcResult
-	//response, err := http.Get(fmt.Sprintf("%s/num_unconfirmed_txs", okc.rpc))
-	//if err != nil {
-	//	fmt.Println(err)
-	//	return 0
-	//}
-	//
-	//bts, err := ioutil.ReadAll(response.Body)
-	//if err != nil {
-	//	fmt.Println(err)
-	//	return 0
-	//}
-	//
-	//err = json.Unmarshal(bts, &result)
-	//if err != nil {
-	//	fmt.Println(err)
-	//	return 0
-	//}
-	//
-	//fmt.Println("mempool size :", result.Result.Total)
-	//total, _ := strconv.Atoi(result.Result.Total)
-	//return total
-
 	var txcount uint
 	var err error
 
@@ -105,17 +89,17 @@ func (okc *okcClient) GetMempoolSize() int {
 		}
 	}
 
-	var curblocknum uint64
-	for {
-		curblocknum, err = okc.BlockNumber(context.Background())
-		if err != nil {
-			time.Sleep(1000 * time.Microsecond)
-		} else {
-			break
-		}
-	}
+	//var curblocknum uint64
+	//for {
+	//	curblocknum, err = okc.BlockNumber(context.Background())
+	//	if err != nil {
+	//		time.Sleep(1000 * time.Microsecond)
+	//	} else {
+	//		break
+	//	}
+	//}
 
-	fmt.Printf("Get PendingTransactionCount = %d, Current Block Number is = %d\n", txcount, curblocknum)
+	//fmt.Printf("Get PendingTransactionCount = %d, Current Block Number is = %d\n", txcount, curblocknum)
 	return int(txcount)
 }
 
@@ -129,6 +113,7 @@ type wmtManager struct {
 	paraNum         int
 	sendOKTToWorker bool
 	threshold       int
+	sTPSman         *simpleTPSManager
 }
 
 func newManager(cList []SwapContract, superAcc *acc, workPath string, paraNum int, clients []*okcClient, sendOKTToWorker bool, threshold int) *wmtManager {
@@ -143,10 +128,21 @@ func newManager(cList []SwapContract, superAcc *acc, workPath string, paraNum in
 			mu: sync.Mutex{},
 			mp: make(map[common.Address]uint64),
 		},
+		sTPSman: &simpleTPSManager{
+			mux:          sync.RWMutex{},
+			aveStartTime: time.Now(),
+			lastTxsent:   0,
+			lastTxpool:   0,
+		},
 	}
 	m.prePareWorker(workPath)
 	m.displayDetail()
 	m.initNonce()
+
+	initMemTx := m.clientList[0].GetMempoolSize()
+	m.sTPSman.mux.Lock()
+	m.sTPSman.lastTxpool = initMemTx
+	m.sTPSman.mux.Unlock()
 	return m
 }
 
@@ -233,6 +229,7 @@ func (m *wmtManager) Loop() {
 			wg.Done()
 		}()
 	}
+	go m.TPSDisplay()
 	wg.Wait()
 }
 
@@ -338,12 +335,15 @@ func (m *wmtManager) runPool(poolIndex int, workIndex int, getReward bool) error
 	a := m.worker[workIndex]
 	c := m.contracList[contractIndex]
 
-	if m.clientList[workIndex%len(m.clientList)].GetMempoolSize() > m.threshold {
+	txpool := m.clientList[workIndex%len(m.clientList)].GetMempoolSize()
+	//m.TPSDisplay(txpool)
+	if txpool > m.threshold {
 		fmt.Println("达到阈值")
+		m.sTPSman.lastTxsent = 0
 		return nil
 	}
 
-	fmt.Println("run---", "workerIndex", workIndex, "contractIndex", contractIndex)
+	//fmt.Println("run---", "workerIndex", workIndex, "contractIndex", contractIndex)
 
 	token0 := c.Token0
 	token1 := c.Token1
@@ -420,10 +420,13 @@ func (m *wmtManager) runPool(poolIndex int, workIndex int, getReward bool) error
 		nonce++
 	}
 
+	m.increase(len(txList))
+
 	if err := SendTxs(m.clientList[workIndex%len(m.clientList)], txList); err != nil {
 		fmt.Println("SendTxs failed", err)
 		time.Sleep(60 * time.Second)
 		m.nonceM.setNonce(a.ethAddress, GetNonce(m.clientList[0], a.ecdsaPriv))
+		m.increase(-len(txList))
 		return err
 	}
 
@@ -453,5 +456,34 @@ func (m *wmtManager) run(tasks []int) {
 
 		}
 		turns++
+	}
+}
+
+func (m *wmtManager) increase(txnum int) {
+	m.sTPSman.mux.Lock()
+	defer m.sTPSman.mux.Unlock()
+	fmt.Printf("[Txsend] Old lastTxsent: %d, New lastTxsent %d\n", m.sTPSman.lastTxsent, m.sTPSman.lastTxsent+txnum)
+	m.sTPSman.lastTxsent += txnum
+}
+
+func (m *wmtManager) TPSDisplay() {
+	for true {
+		m.sTPSman.mux.Lock()
+		if m.sTPSman.lastTxsent == 0 {
+			m.sTPSman.mux.Unlock()
+			time.Sleep(1 * time.Second)
+			continue
+		}
+
+		newtxpool := m.clientList[0].GetMempoolSize()
+		Txexec := m.sTPSman.lastTxpool - newtxpool + m.sTPSman.lastTxsent
+		aveTimeInterval := time.Now().Sub(m.sTPSman.aveStartTime)
+		aveTPS := float64(Txexec) / aveTimeInterval.Seconds()
+		fmt.Println("========================================================")
+		fmt.Printf("[TPS log] LastTxPool: %d, NewTxPool: %d,Tx sent: %d,Tx exec: %d, Average TPS : %5.2f, Time: %d ms\n", m.sTPSman.lastTxpool, newtxpool, m.sTPSman.lastTxsent, Txexec, aveTPS, aveTimeInterval.Milliseconds())
+		fmt.Println("========================================================")
+
+		m.sTPSman.mux.Unlock()
+		time.Sleep(2 * time.Second)
 	}
 }
