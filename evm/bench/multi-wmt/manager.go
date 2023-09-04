@@ -35,12 +35,13 @@ type nonceManager struct {
 type simpleTPSManager struct {
 	// RWmutex
 	mux sync.RWMutex
-	// time recorder for average TPS, update when counter = 1000
+	// time recorder for average TPS
 	aveStartTime time.Time
-	// save last Txpool query
-	lastTxpool int
-	// last Tx sent
-	lastTxsent   int
+	// time recorder for instant TPS
+	insStartTime time.Time
+	// save start BlockNum for average TPS
+	startBlockNum uint64
+	// save last BlockNum query for instant TPS
 	lastBlockNum uint64
 }
 
@@ -160,18 +161,16 @@ func newManager(cList []SwapContract, superAcc *acc, workPath string, paraNum in
 		sTPSman: &simpleTPSManager{
 			mux:          sync.RWMutex{},
 			aveStartTime: time.Now(),
-			lastTxsent:   0,
-			lastTxpool:   0,
+			insStartTime: time.Now(),
 		},
 	}
 	m.prePareWorker(workPath)
 	m.displayDetail()
 	m.initNonce()
 
-	initMemTx := m.clientList[0].GetMempoolSize()
 	initBlockNum := m.clientList[0].GetBlockNum()
 	m.sTPSman.mux.Lock()
-	m.sTPSman.lastTxpool = initMemTx
+	m.sTPSman.startBlockNum = initBlockNum
 	m.sTPSman.lastBlockNum = initBlockNum
 	m.sTPSman.mux.Unlock()
 	return m
@@ -370,7 +369,6 @@ func (m *wmtManager) runPool(poolIndex int, workIndex int, getReward bool) error
 	//m.TPSDisplay(txpool)
 	if txpool > m.threshold {
 		fmt.Println("达到阈值")
-		m.sTPSman.lastTxsent = 0
 		return nil
 	}
 
@@ -451,13 +449,10 @@ func (m *wmtManager) runPool(poolIndex int, workIndex int, getReward bool) error
 		nonce++
 	}
 
-	m.increase(len(txList))
-
 	if err := SendTxs(m.clientList[workIndex%len(m.clientList)], txList); err != nil {
 		fmt.Println("SendTxs failed", err)
 		time.Sleep(60 * time.Second)
 		m.nonceM.setNonce(a.ethAddress, GetNonce(m.clientList[0], a.ecdsaPriv))
-		m.increase(-len(txList))
 		return err
 	}
 
@@ -490,33 +485,31 @@ func (m *wmtManager) run(tasks []int) {
 	}
 }
 
-func (m *wmtManager) increase(txnum int) {
-	m.sTPSman.mux.Lock()
-	defer m.sTPSman.mux.Unlock()
-	fmt.Printf("[Txsend] Old lastTxsent: %d, New lastTxsent %d\n", m.sTPSman.lastTxsent, m.sTPSman.lastTxsent+txnum)
-	m.sTPSman.lastTxsent += txnum
-}
-
 func (m *wmtManager) TPSDisplay() {
 	for true {
 		m.sTPSman.mux.Lock()
-		if m.sTPSman.lastTxsent == 0 {
+
+		newblockNum := m.clientList[0].GetBlockNum()
+		// No tx is executed
+		if m.sTPSman.lastBlockNum == newblockNum {
 			m.sTPSman.mux.Unlock()
 			time.Sleep(1 * time.Second)
 			continue
 		}
-
-		newtxpool := m.clientList[0].GetMempoolSize()
-		Txexec := m.sTPSman.lastTxpool - newtxpool + m.sTPSman.lastTxsent
 		aveTimeInterval := time.Now().Sub(m.sTPSman.aveStartTime)
-		aveTPS := float64(Txexec) / aveTimeInterval.Seconds()
+		insTimeInterval := time.Now().Sub(m.sTPSman.insStartTime)
+		m.sTPSman.insStartTime = time.Now()
 
-		newblockNum := m.clientList[0].GetBlockNum()
-		BlockExec := newblockNum - m.sTPSman.lastBlockNum + 1
-		avebTPS := float64(BlockExec) / aveTimeInterval.Seconds()
+		aveBlockExec := newblockNum - m.sTPSman.startBlockNum + 1
+		aveTPS := float64(aveBlockExec) / aveTimeInterval.Seconds()
+
+		insBlockExec := newblockNum - m.sTPSman.lastBlockNum + 1
+		m.sTPSman.lastBlockNum = newblockNum
+		insTPS := float64(insBlockExec) / insTimeInterval.Seconds()
 		fmt.Println("========================================================")
-		fmt.Printf("[TPS log] LastTxPool: %d, NewTxPool: %d,Tx sent: %d,Tx exec: %d, Average TPS : %5.2f,Time: %d ms\n", m.sTPSman.lastTxpool, newtxpool, m.sTPSman.lastTxsent, Txexec, aveTPS, aveTimeInterval.Milliseconds())
-		fmt.Printf("[TPS log] LastBlockNum: %d, NewBlockNum: %d, Average BTPS: %5.2f\n", m.sTPSman.lastBlockNum, newblockNum, avebTPS)
+		fmt.Printf("[TPS log] StartBlock Num: %d, LastBlockNum: %d, NewBlockNum: %d\n", m.sTPSman.startBlockNum, m.sTPSman.lastBlockNum, newblockNum)
+		fmt.Printf("[TPS log] Average BTPS: %5.2f, Time Last: %dms, Total BlockExec: %d\n", aveTPS, aveTimeInterval.Milliseconds(), aveBlockExec)
+		fmt.Printf("[TPS log] Instant TPS %5.2f, Time Interval: %dms, BlockExec: %d\n", insTPS, insTimeInterval.Milliseconds(), insBlockExec)
 		fmt.Println("========================================================")
 
 		m.sTPSman.mux.Unlock()
