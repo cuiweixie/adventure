@@ -40,7 +40,8 @@ type simpleTPSManager struct {
 	// save last Txpool query
 	lastTxpool int
 	// last Tx sent
-	lastTxsent int
+	lastTxsent   int
+	lastBlockNum uint64
 }
 
 func (n *nonceManager) addrSize() int {
@@ -103,6 +104,34 @@ func (okc *okcClient) GetMempoolSize() int {
 	return int(txcount)
 }
 
+func (okc *okcClient) GetBlockNum() uint64 {
+
+	var blockCount uint64
+	var err error
+
+	for {
+		blockCount, err = okc.BlockNumber(context.Background())
+		if err != nil {
+			time.Sleep(1000 * time.Microsecond)
+		} else {
+			break
+		}
+	}
+
+	//var curblocknum uint64
+	//for {
+	//	curblocknum, err = okc.BlockNumber(context.Background())
+	//	if err != nil {
+	//		time.Sleep(1000 * time.Microsecond)
+	//	} else {
+	//		break
+	//	}
+	//}
+
+	//fmt.Printf("Get PendingTransactionCount = %d, Current Block Number is = %d\n", txcount, curblocknum)
+	return blockCount
+}
+
 type wmtManager struct {
 	clientList  []*okcClient
 	contracList []SwapContract
@@ -140,8 +169,10 @@ func newManager(cList []SwapContract, superAcc *acc, workPath string, paraNum in
 	m.initNonce()
 
 	initMemTx := m.clientList[0].GetMempoolSize()
+	initBlockNum := m.clientList[0].GetBlockNum()
 	m.sTPSman.mux.Lock()
 	m.sTPSman.lastTxpool = initMemTx
+	m.sTPSman.lastBlockNum = initBlockNum
 	m.sTPSman.mux.Unlock()
 	return m
 }
@@ -479,11 +510,17 @@ func (m *wmtManager) TPSDisplay() {
 		Txexec := m.sTPSman.lastTxpool - newtxpool + m.sTPSman.lastTxsent
 		aveTimeInterval := time.Now().Sub(m.sTPSman.aveStartTime)
 		aveTPS := float64(Txexec) / aveTimeInterval.Seconds()
+
+		newblockNum := m.clientList[0].GetBlockNum()
+		BlockExec := newblockNum - m.sTPSman.lastBlockNum + 1
+		avebTPS := float64(BlockExec) / aveTimeInterval.Seconds()
 		fmt.Println("========================================================")
-		fmt.Printf("[TPS log] LastTxPool: %d, NewTxPool: %d,Tx sent: %d,Tx exec: %d, Average TPS : %5.2f, Time: %d ms\n", m.sTPSman.lastTxpool, newtxpool, m.sTPSman.lastTxsent, Txexec, aveTPS, aveTimeInterval.Milliseconds())
+		fmt.Printf("[TPS log] LastTxPool: %d, NewTxPool: %d,Tx sent: %d,Tx exec: %d, Average TPS : %5.2f,Time: %d ms\n", m.sTPSman.lastTxpool, newtxpool, m.sTPSman.lastTxsent, Txexec, aveTPS, aveTimeInterval.Milliseconds())
+		fmt.Printf("[TPS log] LastBlockNum: %d, NewBlockNum: %d, Average BTPS: %5.2f\n", m.sTPSman.lastBlockNum, newblockNum, avebTPS)
 		fmt.Println("========================================================")
 
 		m.sTPSman.mux.Unlock()
+
 		time.Sleep(2 * time.Second)
 	}
 }
