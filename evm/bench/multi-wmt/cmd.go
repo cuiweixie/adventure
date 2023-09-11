@@ -12,7 +12,7 @@ var (
 	wmtFile  = "./config/wmt.json"
 	chainID  = new(big.Int).SetUint64(1001)
 	signer   = types.NewEIP155Signer(chainID)
-	gasPrice = new(big.Int).SetUint64(1000000000)
+	gasPrice = new(big.Int).SetUint64(50000000)
 	gasLimit = uint64(3000000)
 )
 
