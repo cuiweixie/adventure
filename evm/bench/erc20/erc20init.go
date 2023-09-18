@@ -91,11 +91,12 @@ func erc20init(cmd *cobra.Command, args []string) {
 
 	// 2.3 transfers ERC20
 	accBalance := TotalSupplyAmount.Int64() / int64(len(addrs))
-	if err := transferERC20(cli, privateKey, nonce, bterc20Addr, big.NewInt(accBalance), addrs); err != nil {
+	if err := transferERC20(cli, privateKey, nonce, bterc20Addr, erc20Addr, big.NewInt(accBalance), addrs); err != nil {
 		log.Println(fmt.Errorf("failed to transfer ERC20, error: %s", err))
 		return
 	}
 
+	log.Printf("Finish! ERC20 Address: %s\n", erc20Addr)
 }
 
 func loadEnv() (client.Client, *ecdsa.PrivateKey, []ethcmn.Address) {
@@ -152,7 +153,7 @@ func deployBTNative(cli client.Client, privateKey *ecdsa.PrivateKey, nonce uint6
 }
 
 func deployERC20(cli client.Client, privateKey *ecdsa.PrivateKey, nonce uint64) (ethcmn.Address, error) {
-	txhash, err := cli.CreateContract(privateKey, nonce, nil, 300000, evmtypes.DefaultGasPrice, ethcmn.Hex2Bytes(ERC20Hex))
+	txhash, err := cli.CreateContract(privateKey, nonce, nil, 1000000, evmtypes.DefaultGasPrice, ethcmn.Hex2Bytes(ERC20Hex))
 	if err != nil {
 		return ethcmn.Address{}, err
 	}
@@ -163,7 +164,7 @@ func deployERC20(cli client.Client, privateKey *ecdsa.PrivateKey, nonce uint64) 
 }
 
 func deployBTERC20(cli client.Client, privateKey *ecdsa.PrivateKey, nonce uint64) (ethcmn.Address, error) {
-	txhash, err := cli.CreateContract(privateKey, nonce, nil, 300000, evmtypes.DefaultGasPrice, ethcmn.Hex2Bytes(BatchTransferHex))
+	txhash, err := cli.CreateContract(privateKey, nonce, nil, 500000, evmtypes.DefaultGasPrice, ethcmn.Hex2Bytes(BatchTransferHex))
 	if err != nil {
 		return ethcmn.Address{}, err
 	}
@@ -222,7 +223,7 @@ func transfers(cli client.Client, privateKey *ecdsa.PrivateKey, nonce uint64, to
 	return nil
 }
 
-func transferERC20(cli client.Client, privateKey *ecdsa.PrivateKey, nonce uint64, to ethcmn.Address, amount *big.Int, addrs []ethcmn.Address) error {
+func transferERC20(cli client.Client, privateKey *ecdsa.PrivateKey, nonce uint64, bterc20Addr, tokenAddr ethcmn.Address, amount *big.Int, addrs []ethcmn.Address) error {
 	// load abi
 	tABI, err := abi.JSON(strings.NewReader(BatchTransferABI))
 	if err != nil {
@@ -235,11 +236,11 @@ func transferERC20(cli client.Client, privateKey *ecdsa.PrivateKey, nonce uint64
 		if end > len(addrs) {
 			end = len(addrs)
 		}
-		txdata, err := tABI.Pack("batchTransferERC20", addrs[start:end], amount)
+		txdata, err := tABI.Pack("batchTransferERC20", addrs[start:end], tokenAddr, amount)
 		if err != nil {
 			return fmt.Errorf("failed to pack BatchTransferERC20 parameters, error: %s", err)
 		}
-		txhash, err := cli.SendEthereumTx(privateKey, nonce, to, nil, uint64(100000*batchNum), evmtypes.DefaultGasPrice, txdata)
+		txhash, err := cli.SendEthereumTx(privateKey, nonce, bterc20Addr, nil, uint64(100000*batchNum), evmtypes.DefaultGasPrice, txdata)
 		if err != nil {
 			return err
 		}
