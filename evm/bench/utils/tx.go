@@ -203,6 +203,8 @@ func RunTxs(p BasepParam, e func(ethcmm.Address) []TxParam) {
 	//	}
 	//}(cli)
 
+	tpsman := NewTPSMan(config.TransferCfg.Rpc[0])
+
 	concurrency := config.TransferCfg.Concurrency
 	count := len(accounts) / concurrency
 	for i := 0; i < concurrency; i++ {
@@ -230,6 +232,7 @@ func RunTxs(p BasepParam, e func(ethcmm.Address) []TxParam) {
 		}(i)
 	}
 
+	go tpsman.TPSDisplay()
 	select {}
 }
 
@@ -280,7 +283,7 @@ func execute(gIndex int, cli client.Client, acc *EthAccount, e func(ethcmm.Addre
 
 	eParams := e(caller)
 	for _, eParam := range eParams {
-		txhash, err := cli.SendEthereumTx(acc.GetPrivateKey(), acc.GetNonce(), eParam.to, eParam.amount, eParam.gasLimit, eParam.gasPrice, eParam.data)
+		_, err := cli.SendEthereumTx(acc.GetPrivateKey(), acc.GetNonce(), eParam.to, eParam.amount, eParam.gasLimit, eParam.gasPrice, eParam.data)
 		if err != nil {
 			log.Printf("[g%d] %s send tx err: %s\n", gIndex, caller, err)
 			if strings.Contains(err.Error(), "already exists") {
@@ -291,8 +294,9 @@ func execute(gIndex int, cli client.Client, acc *EthAccount, e func(ethcmm.Addre
 				acc.AddNonce()
 			}
 		} else {
-			log.Printf("[g%d] %s txhash: %s\n", gIndex, caller, txhash)
+			//log.Printf("[g%d] %s txhash: %s\n", gIndex, caller, txhash)
 			acc.AddNonce()
+			time.Sleep(1 * time.Millisecond)
 		}
 	}
 }

@@ -35,8 +35,6 @@ func erc20(cmd *cobra.Command, args []string) {
 		panic(err)
 	}
 
-	tpsman := utils.NewTPSMan(config.TransferCfg.Rpc[0])
-
 	eParam = utils.NewTxParam(
 		ethcmm.HexToAddress(contract),
 		nil,
@@ -51,7 +49,6 @@ func erc20(cmd *cobra.Command, args []string) {
 			return []utils.TxParam{eParam}
 		},
 	)
-	go tpsman.TPSDisplay()
 }
 
 func generateTxData() []byte {
