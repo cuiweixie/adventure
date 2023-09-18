@@ -38,6 +38,7 @@ func BenchCmd() *cobra.Command {
 		celt.CeltRun(),
 		xen.XenRun(),
 		erc20.ERC20Cmd(),
+		erc20.ERC20InitCmd(),
 	)
 
 	cmd.PersistentFlags().IntP(constant.FlagConcurrency, "c", 1, "The number of fixed goroutines that need to be set")
