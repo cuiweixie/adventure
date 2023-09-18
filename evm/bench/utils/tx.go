@@ -5,9 +5,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/okex/adventure/evm/config"
 	"io/ioutil"
 	"log"
 	"math/big"
@@ -18,8 +15,12 @@ import (
 	"time"
 
 	ethcmm "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/rlp"
+
 	"github.com/okex/adventure/common"
 	"github.com/okex/adventure/common/client"
+	"github.com/okex/adventure/evm/config"
 )
 
 type TxParam struct {
@@ -40,7 +41,8 @@ var (
 	signer       = types.NewLondonSigner(chainId)
 )
 
-/**
+/*
+*
 作用：用来计算并发携程一次发送完毕后的的成功率
 */
 func GetTxTpsAndSuccessRatio(lstTxHash []string, cocurrent int64) (ratio float32, tps int64) {
@@ -81,7 +83,8 @@ func getTxHashList(gIndex int, cli client.Client, acc *EthAccount, e func(ethcmm
 	return lstTxHash
 }
 
-/**
+/*
+*
 功能：获取返回所有账户的rlpencode
 */
 func getTxRlpEncodeList(cli client.Client, acc *EthAccount, e func(ethcmm.Address) []TxParam) {
@@ -102,7 +105,8 @@ func getTxRlpEncodeList(cli client.Client, acc *EthAccount, e func(ethcmm.Addres
 	//return lstRlpEncode
 }
 
-/**
+/*
+*
 功能：获取到单个交易的rlpencode
 */
 func GetEthTxRlpEncode(pk *ecdsa.PrivateKey, nonce uint64, to ethcmm.Address, amount *big.Int, gaslimit uint64, gasprice *big.Int, data []byte) (string, error) {
@@ -182,17 +186,22 @@ func RunTxRpc(p BasepParam, e func(ethcmm.Address) []TxParam) {
 func RunTxs(p BasepParam, e func(ethcmm.Address) []TxParam) {
 	clients := client.GenerateClients(config.TransferCfg.Rpc)    // generate CosmosClient or EthClient
 	accounts := generateAccounts(config.TransferCfg.PrivateKeys) // generate accounts
-	mempoolSizeMap := &sync.Map{}
-
-	for _, tendermint := range config.TransferCfg.TenderMint {
-		go func(url string) {
-			for {
-				size := getMempoolSize(url)
-				mempoolSizeMap.Store(url, size)
-				time.Sleep(500 * time.Millisecond)
-			}
-		}(tendermint)
-	}
+	//mempoolSizeMap := &sync.Map{}
+	//
+	//// ethClient for mempool query
+	//cli, err := ethclient.Dial(config.TransferCfg.Rpc[0])
+	//
+	//if err != nil {
+	//	panic(fmt.Errorf("failed to initialize client: %+v", err))
+	//}
+	//
+	//go func(client *ethclient.Client) {
+	//	for {
+	//		size := getMempoolSize(url)
+	//		mempoolSizeMap.Store(url, size)
+	//		time.Sleep(500 * time.Millisecond)
+	//	}
+	//}(cli)
 
 	concurrency := config.TransferCfg.Concurrency
 	count := len(accounts) / concurrency
@@ -203,17 +212,17 @@ func RunTxs(p BasepParam, e func(ethcmm.Address) []TxParam) {
 				for index := gIndex * count; index < (gIndex+1)*count; index++ {
 					acc := accounts[index]
 					cli := clients[index%len(clients)]
-					tendermintUrl := config.TransferCfg.TenderMint[index%len(clients)]
+					//tendermintUrl := config.TransferCfg.TenderMint[index%len(clients)]
 					//if config.TransferCfg.Threshold > 0 && j%5 == 0 && getMempoolSize(tendermintUrl) >= config.TransferCfg.Threshold {
 					//	fmt.Println("达到阈值")
 					//	continue
 					//}
 
-					mempoolSize, ok := mempoolSizeMap.Load(tendermintUrl)
-					if ok && mempoolSize.(int) >= config.TransferCfg.Threshold {
-						fmt.Println("达到阈值")
-						continue
-					}
+					//mempoolSize, ok := mempoolSizeMap.Load(tendermintUrl)
+					//if ok && mempoolSize.(int) >= config.TransferCfg.Threshold {
+					//	fmt.Println("达到阈值")
+					//	continue
+					//}
 					execute(gIndex, cli, acc, e)
 				}
 
@@ -271,7 +280,7 @@ func execute(gIndex int, cli client.Client, acc *EthAccount, e func(ethcmm.Addre
 
 	eParams := e(caller)
 	for _, eParam := range eParams {
-		_, err := cli.SendEthereumTx(acc.GetPrivateKey(), acc.GetNonce(), eParam.to, eParam.amount, eParam.gasLimit, eParam.gasPrice, eParam.data)
+		txhash, err := cli.SendEthereumTx(acc.GetPrivateKey(), acc.GetNonce(), eParam.to, eParam.amount, eParam.gasLimit, eParam.gasPrice, eParam.data)
 		if err != nil {
 			log.Printf("[g%d] %s send tx err: %s\n", gIndex, caller, err)
 			if strings.Contains(err.Error(), "already exists") {
@@ -282,7 +291,7 @@ func execute(gIndex int, cli client.Client, acc *EthAccount, e func(ethcmm.Addre
 				acc.AddNonce()
 			}
 		} else {
-			//log.Printf("[g%d] %s txhash: %s\n", gIndex, caller, txhash)
+			log.Printf("[g%d] %s txhash: %s\n", gIndex, caller, txhash)
 			acc.AddNonce()
 		}
 	}

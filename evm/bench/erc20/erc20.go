@@ -1,0 +1,91 @@
+package erc20
+
+import (
+	"encoding/json"
+	"errors"
+	"io/ioutil"
+	"math/big"
+	"os"
+	"strings"
+
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	ethcmm "github.com/ethereum/go-ethereum/common"
+	"github.com/spf13/cobra"
+
+	"github.com/okex/adventure/common"
+	"github.com/okex/adventure/evm/bench/utils"
+	"github.com/okex/adventure/evm/config"
+	"github.com/okex/adventure/evm/constant"
+)
+
+var (
+	// used for flags
+	contract   string
+	configPath string
+	// global variables
+	eParam utils.TxParam
+)
+
+func erc20(cmd *cobra.Command, args []string) {
+
+	if configPath == "" {
+		panic(errors.New("configPath must be not empty "))
+	}
+
+	if err := loadConfig(configPath); err != nil {
+		panic(err)
+	}
+
+	tpsman := utils.NewTPSMan(config.TransferCfg.Rpc[0])
+
+	eParam = utils.NewTxParam(
+		ethcmm.HexToAddress(contract),
+		nil,
+		uint64(3000000),
+		new(big.Int).SetUint64(1800000000),
+		generateTxData(),
+	)
+
+	utils.RunTxs(
+		utils.DefaultBaseParamFromFlag(),
+		func(_ ethcmm.Address) []utils.TxParam {
+			return []utils.TxParam{eParam}
+		},
+	)
+	go tpsman.TPSDisplay()
+}
+
+func generateTxData() []byte {
+	erc20ABI, err := abi.JSON(strings.NewReader(constant.ERC20ABI))
+	if err != nil {
+		panic(err)
+	}
+	txdata, err := erc20ABI.Pack("transfer", ethcmm.HexToAddress("0x2ECF31eCe36ccaC2d3222A303b1409233ECBB225"), new(big.Int).SetInt64(1))
+	if err != nil {
+		panic(err)
+	}
+	return txdata
+}
+
+func loadConfig(configPath string) error {
+	file, err := os.Open(configPath)
+	if err != nil {
+		return err
+	}
+
+	data, err := ioutil.ReadAll(file)
+	if err != nil {
+		return err
+	}
+
+	defer file.Close()
+
+	if err := json.Unmarshal(data, &config.TransferCfg); err != nil {
+		return err
+	}
+
+	privateKeys := common.ReadDataFromFile(config.TransferCfg.AccountsFilePath)
+	config.TransferCfg.PrivateKeys = privateKeys
+
+	return nil
+}

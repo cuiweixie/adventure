@@ -1,7 +1,11 @@
 package bench
 
 import (
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+
 	"github.com/okex/adventure/evm/bench/celt"
+	"github.com/okex/adventure/evm/bench/erc20"
 	multiwmt "github.com/okex/adventure/evm/bench/multi-wmt"
 	"github.com/okex/adventure/evm/bench/operate"
 	"github.com/okex/adventure/evm/bench/query"
@@ -10,8 +14,6 @@ import (
 	"github.com/okex/adventure/evm/bench/wmt"
 	"github.com/okex/adventure/evm/bench/xen"
 	"github.com/okex/adventure/evm/constant"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 func BenchCmd() *cobra.Command {
@@ -35,6 +37,7 @@ func BenchCmd() *cobra.Command {
 		celt.CeltInit(),
 		celt.CeltRun(),
 		xen.XenRun(),
+		erc20.ERC20Cmd(),
 	)
 
 	cmd.PersistentFlags().IntP(constant.FlagConcurrency, "c", 1, "The number of fixed goroutines that need to be set")
