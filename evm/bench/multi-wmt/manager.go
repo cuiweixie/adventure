@@ -486,9 +486,11 @@ func (m *wmtManager) run(tasks []int) {
 }
 
 func (m *wmtManager) TPSDisplay() {
+	var minTPS, maxTPS float64
+	minTPS = 1000000
+	maxTPS = -1
 	for true {
 		m.sTPSman.mux.Lock()
-
 		newblockNum := m.clientList[0].GetBlockNum()
 		// No tx is executed
 		if m.sTPSman.lastBlockNum == newblockNum {
@@ -506,10 +508,17 @@ func (m *wmtManager) TPSDisplay() {
 		insBlockExec := newblockNum - m.sTPSman.lastBlockNum + 1
 		m.sTPSman.lastBlockNum = newblockNum
 		insTPS := float64(insBlockExec) / insTimeInterval.Seconds()
+		if minTPS > insTPS {
+			minTPS = insTPS
+		}
+		if maxTPS < insTPS {
+			maxTPS = insTPS
+		}
 		fmt.Println("========================================================")
 		fmt.Printf("[TPS log] StartBlock Num: %d, LastBlockNum: %d, NewBlockNum: %d\n", m.sTPSman.startBlockNum, m.sTPSman.lastBlockNum, newblockNum)
 		fmt.Printf("[TPS log] Average BTPS: %5.2f, Time Last: %dms, Total BlockExec: %d\n", aveTPS, aveTimeInterval.Milliseconds(), aveBlockExec)
 		fmt.Printf("[TPS log] Instant TPS %5.2f, Time Interval: %dms, BlockExec: %d\n", insTPS, insTimeInterval.Milliseconds(), insBlockExec)
+		fmt.Printf("[Summary] Average BTPS: %5.2f, Max TPS: %5.2f, Min TPS: %5.2f, Time Last: %dms\n", aveTPS, maxTPS, minTPS, aveTimeInterval.Milliseconds())
 		fmt.Println("========================================================")
 
 		m.sTPSman.mux.Unlock()
