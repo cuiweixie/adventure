@@ -15,7 +15,6 @@ import (
 	"github.com/okex/adventure/common"
 	"github.com/okex/adventure/evm/bench/utils"
 	"github.com/okex/adventure/evm/config"
-	"github.com/okex/adventure/evm/constant"
 )
 
 var (
@@ -56,7 +55,7 @@ func erc20(cmd *cobra.Command, args []string) {
 }
 
 func generateTxData() []byte {
-	erc20ABI, err := abi.JSON(strings.NewReader(constant.ERC20ABI))
+	erc20ABI, err := abi.JSON(strings.NewReader(ERC20ABI))
 	if err != nil {
 		panic(err)
 	}
