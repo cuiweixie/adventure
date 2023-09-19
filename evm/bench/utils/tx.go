@@ -1,14 +1,12 @@
 package utils
 
 import (
+	"context"
 	"crypto/ecdsa"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"math/big"
-	"net/http"
 	"strconv"
 	"strings"
 	"sync"
@@ -16,6 +14,7 @@ import (
 
 	ethcmm "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rlp"
 
 	"github.com/okex/adventure/common"
@@ -186,22 +185,22 @@ func RunTxRpc(p BasepParam, e func(ethcmm.Address) []TxParam) {
 func RunTxs(p BasepParam, e func(ethcmm.Address) []TxParam) {
 	clients := client.GenerateClients(config.TransferCfg.Rpc)    // generate CosmosClient or EthClient
 	accounts := generateAccounts(config.TransferCfg.PrivateKeys) // generate accounts
-	//mempoolSizeMap := &sync.Map{}
-	//
-	//// ethClient for mempool query
-	//cli, err := ethclient.Dial(config.TransferCfg.Rpc[0])
-	//
-	//if err != nil {
-	//	panic(fmt.Errorf("failed to initialize client: %+v", err))
-	//}
-	//
-	//go func(client *ethclient.Client) {
-	//	for {
-	//		size := getMempoolSize(url)
-	//		mempoolSizeMap.Store(url, size)
-	//		time.Sleep(500 * time.Millisecond)
-	//	}
-	//}(cli)
+	mempoolSizeMap := &sync.Map{}
+
+	// ethClient for mempool query
+	cli, err := ethclient.Dial(config.TransferCfg.Rpc[0])
+
+	if err != nil {
+		panic(fmt.Errorf("failed to initialize client: %+v", err))
+	}
+
+	go func(client *ethclient.Client) {
+		for {
+			size := getMempoolSize(client)
+			mempoolSizeMap.Store(0, size)
+			time.Sleep(500 * time.Millisecond)
+		}
+	}(cli)
 
 	tpsman := NewTPSMan(config.TransferCfg.Rpc[0])
 
@@ -210,21 +209,16 @@ func RunTxs(p BasepParam, e func(ethcmm.Address) []TxParam) {
 	for i := 0; i < concurrency; i++ {
 		go func(gIndex int) {
 			for j := 0; ; j++ {
-				//aIndex := (gIndex + j*concurrency) % len(accounts) // make sure accounts will be picked in order by round-robin
 				for index := gIndex * count; index < (gIndex+1)*count; index++ {
 					acc := accounts[index]
 					cli := clients[index%len(clients)]
-					//tendermintUrl := config.TransferCfg.TenderMint[index%len(clients)]
-					//if config.TransferCfg.Threshold > 0 && j%5 == 0 && getMempoolSize(tendermintUrl) >= config.TransferCfg.Threshold {
-					//	fmt.Println("达到阈值")
-					//	continue
-					//}
 
-					//mempoolSize, ok := mempoolSizeMap.Load(tendermintUrl)
-					//if ok && mempoolSize.(int) >= config.TransferCfg.Threshold {
-					//	fmt.Println("达到阈值")
-					//	continue
-					//}
+					mempoolSize, ok := mempoolSizeMap.Load(0)
+					//fmt.Printf("Mempool size: %d\n", mempoolSize)
+					if ok && mempoolSize.(int) >= config.TransferCfg.Threshold {
+						fmt.Println("达到阈值")
+						continue
+					}
 					execute(gIndex, cli, acc, e)
 				}
 
@@ -245,29 +239,19 @@ type MempoolResult struct {
 	TotalBytes string `json:"total_bytes"`
 }
 
-func getMempoolSize(tendermintUrl string) int {
-	var result rpcResult
-	response, err := http.Get(fmt.Sprintf("%s/num_unconfirmed_txs", tendermintUrl))
-	if err != nil {
-		fmt.Println(err)
-		return 0
-	}
+func getMempoolSize(client *ethclient.Client) int {
+	var txcount uint
+	var err error
 
-	bts, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		fmt.Println(err)
-		return 0
+	for {
+		txcount, err = client.PendingTransactionCount(context.Background())
+		if err != nil {
+			time.Sleep(1000 * time.Microsecond)
+		} else {
+			break
+		}
 	}
-
-	err = json.Unmarshal(bts, &result)
-	if err != nil {
-		fmt.Println(err)
-		return 0
-	}
-
-	//fmt.Println("mempool size :", result.Result.Total)
-	total, _ := strconv.Atoi(result.Result.Total)
-	return total
+	return int(txcount)
 }
 
 func execute(gIndex int, cli client.Client, acc *EthAccount, e func(ethcmm.Address) []TxParam) {
@@ -296,7 +280,7 @@ func execute(gIndex int, cli client.Client, acc *EthAccount, e func(ethcmm.Addre
 		} else {
 			//log.Printf("[g%d] %s txhash: %s\n", gIndex, caller, txhash)
 			acc.AddNonce()
-			time.Sleep(1 * time.Millisecond)
+			time.Sleep(10 * time.Millisecond)
 		}
 	}
 }
