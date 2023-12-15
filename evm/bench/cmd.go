@@ -10,6 +10,7 @@ import (
 	"github.com/okex/adventure/evm/bench/operate"
 	"github.com/okex/adventure/evm/bench/query"
 	"github.com/okex/adventure/evm/bench/scenario"
+	script "github.com/okex/adventure/evm/bench/scription"
 	"github.com/okex/adventure/evm/bench/transfer"
 	"github.com/okex/adventure/evm/bench/wmt"
 	"github.com/okex/adventure/evm/bench/xen"
@@ -39,6 +40,7 @@ func BenchCmd() *cobra.Command {
 		xen.XenRun(),
 		erc20.ERC20Cmd(),
 		erc20.ERC20InitCmd(),
+		script.ScriptionCmd(),
 	)
 
 	cmd.PersistentFlags().IntP(constant.FlagConcurrency, "c", 1, "The number of fixed goroutines that need to be set")

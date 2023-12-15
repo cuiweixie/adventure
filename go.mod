@@ -23,6 +23,7 @@ require (
 	github.com/rs/cors v1.8.2 // indirect
 	github.com/spf13/cobra v1.5.0
 	github.com/spf13/viper v1.12.0
+	github.com/status-im/keycard-go v0.0.0-20190424133014-d95853db0f48
 	github.com/subosito/gotenv v1.4.0 // indirect
 	github.com/tklauser/go-sysconf v0.3.10 // indirect
 	golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e // indirect
