@@ -1,0 +1,8 @@
+{
+  "rpc": [
+    "http://127.0.0.1:8545"
+  ],
+  "accountsFilePath": "./config/poly_test/addr_1000_wmt",
+  "concurrency": 1,
+  "threshold": 1800
+}
