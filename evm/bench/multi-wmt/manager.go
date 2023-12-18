@@ -276,7 +276,7 @@ func (m *wmtManager) needTransferToWorker() bool {
 }
 
 var (
-	ether = new(big.Int).Mul(new(big.Int).SetInt64(10000000), new(big.Int).SetInt64(1000000000))
+	ether = new(big.Int).Mul(new(big.Int).SetInt64(1000000000), new(big.Int).SetInt64(1000000000))
 )
 
 func display(client *okcClient, acc *acc, to common.Address, payload []byte) {
