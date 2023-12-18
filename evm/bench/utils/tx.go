@@ -284,3 +284,53 @@ func execute(gIndex int, cli client.Client, acc *EthAccount, e func(ethcmm.Addre
 		}
 	}
 }
+
+func RunTxsForPoly(e func(ethcmm.Address) []TxParam) {
+	clients := client.GenerateClients(config.Bridgecfg.L1RPC)  // generate CosmosClient or EthClient
+	accounts := generateAccounts(config.Bridgecfg.PrivateKeys) // generate accounts
+	mempoolSizeMap := &sync.Map{}
+
+	// ethClient for mempool query
+	l1cli, err := ethclient.Dial(config.Bridgecfg.L1RPC[0])
+	l2cli, err := ethclient.Dial(config.Bridgecfg.L2RPC[0])
+
+	if err != nil {
+		panic(fmt.Errorf("failed to initialize client: %+v", err))
+	}
+
+	go func(client1, client2 *ethclient.Client) {
+		for {
+			l1size := getMempoolSize(client1)
+			l2size := getMempoolSize(client2)
+			fmt.Printf("L1 Mempool size: %d, L2 Mempool size: %d\n", l1size, l2size)
+			mempoolSizeMap.Store(0, l1size)
+			time.Sleep(500 * time.Millisecond)
+		}
+	}(l1cli, l2cli)
+
+	tpsman := NewTPSMan(config.Bridgecfg.L2RPC[0])
+
+	concurrency := config.Bridgecfg.Concurrency
+	count := len(accounts) / concurrency
+	for i := 0; i < concurrency; i++ {
+		go func(gIndex int) {
+			for j := 0; ; j++ {
+				for index := gIndex * count; index < (gIndex+1)*count; index++ {
+					acc := accounts[index]
+					cli := clients[index%len(clients)]
+
+					mempoolSize, ok := mempoolSizeMap.Load(0)
+					if ok && mempoolSize.(int) >= config.Bridgecfg.Threshold {
+						fmt.Println("达到阈值")
+						continue
+					}
+					execute(gIndex, cli, acc, e)
+				}
+
+			}
+		}(i)
+	}
+
+	go tpsman.TPSDisplay()
+	select {}
+}

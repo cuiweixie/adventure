@@ -8,6 +8,7 @@ import (
 	"github.com/okex/adventure/evm/bench/erc20"
 	multiwmt "github.com/okex/adventure/evm/bench/multi-wmt"
 	"github.com/okex/adventure/evm/bench/operate"
+	"github.com/okex/adventure/evm/bench/polybridge"
 	"github.com/okex/adventure/evm/bench/query"
 	"github.com/okex/adventure/evm/bench/scenario"
 	script "github.com/okex/adventure/evm/bench/scription"
@@ -40,6 +41,7 @@ func BenchCmd() *cobra.Command {
 		xen.XenRun(),
 		erc20.ERC20Cmd(),
 		erc20.ERC20InitCmd(),
+		polybridge.PolyBridgeCmd(),
 		script.ScriptionCmd(),
 	)
 
