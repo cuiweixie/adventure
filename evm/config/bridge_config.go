@@ -12,4 +12,5 @@ type BridgeConfig struct {
 	AccountsFilePath string   `json:"accountsFilePath"`
 	BridgeAddress    string   `json:"bridgeAddress"`
 	PrivateKeys      []string
+	GasPrice         float64 `json:"gasprice"`
 }

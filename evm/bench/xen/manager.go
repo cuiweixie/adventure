@@ -5,10 +5,6 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"fmt"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"io"
 	"math/big"
 	"math/rand"
@@ -16,6 +12,11 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethclient"
 )
 
 func (m *xenManager) prePareWorker(path string) {
@@ -263,7 +264,8 @@ func SendTxs(client *ethclient.Client, txs []*types.Transaction) error {
 func randomXen() int {
 	rand.Seed(time.Now().UnixNano())
 	//随机生成100以内的正整数
-	return rand.Intn(100)
+	//return rand.Intn(100)
+	return xenRandom
 }
 
 func (m *xenManager) t(workIndex int, txLen int) error {

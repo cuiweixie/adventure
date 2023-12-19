@@ -3,27 +3,32 @@ package transfer
 import (
 	"encoding/json"
 	"errors"
+	"io/ioutil"
+	"math/big"
+	"os"
+
 	ethcmm "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/okex/exchain/libs/tendermint/libs/rand"
+	"github.com/spf13/cobra"
+
 	"github.com/okex/adventure/common"
 	"github.com/okex/adventure/evm/bench/utils"
 	"github.com/okex/adventure/evm/config"
-	evmtypes "github.com/okex/exchain-go-sdk/module/evm/types"
-	sdk "github.com/okex/exchain/libs/cosmos-sdk/types"
-	"github.com/okex/exchain/libs/tendermint/libs/rand"
-	"github.com/spf13/cobra"
-	"io/ioutil"
-	"os"
 )
 
 var (
 	// used for flags
 	fixed      bool
 	configPath string
+	//configurable gasPrice
+	gasPrice = new(big.Int).SetUint64(10000000000)
 )
 
 func transfer(cmd *cobra.Command, args []string) {
-	amount := sdk.MustNewDecFromStr("0.00001").Int
+	// amount := sdk.MustNewDecFromStr("0.000001").Int
+	amount := utils.ParseGasPriceToBigInt(0.000001, 18)
+
 	fixedAddr := ethcmm.BytesToAddress(crypto.Keccak256(rand.Bytes(64)))
 
 	if configPath == "" {
@@ -46,7 +51,7 @@ func transfer(cmd *cobra.Command, args []string) {
 			if !fixed {
 				to = toAddrs[rand.Intn(len(toAddrs))]
 			}
-			return []utils.TxParam{utils.NewTxParam(to, amount, 21000, evmtypes.DefaultGasPrice, nil)}
+			return []utils.TxParam{utils.NewTxParam(to, amount, 21000, gasPrice, nil)}
 		},
 	)
 }
@@ -70,6 +75,7 @@ func loadConfig(configPath string) error {
 
 	privateKeys := common.ReadDataFromFile(config.TransferCfg.AccountsFilePath)
 	config.TransferCfg.PrivateKeys = privateKeys
+	gasPrice = utils.ParseGasPriceToBigInt(config.TransferCfg.GasPrice, 9)
 
 	return nil
 }

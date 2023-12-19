@@ -1,0 +1,12 @@
+{
+  "RPC": [
+    "https://testrpc.x1.tech"
+  ],
+  "WorkerPath": "./config/poly_test/addr_1_wmt",
+  "CoinToolAddress": "",
+  "XenAddress": "",
+  "MaxCreateAccInOneBlock": 1,
+  "ParaNum": 1,
+  "gasPrice": 9,
+  "xenrandom": 5
+}

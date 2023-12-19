@@ -2,9 +2,10 @@ package xen
 
 import (
 	"context"
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/spf13/cobra"
-	"math/big"
 )
 
 func XenRun() *cobra.Command {
@@ -19,8 +20,9 @@ func XenRun() *cobra.Command {
 }
 
 var (
-	signer   = types.NewEIP155Signer(new(big.Int).SetInt64(65))
-	gasPrice = new(big.Int).SetInt64(int64(1000000001)) //  // 10gwe
+	signer        = types.NewEIP155Signer(new(big.Int).SetInt64(65))
+	gasPrice      = new(big.Int).SetInt64(int64(10000000001)) //  // 10gwe
+	xenRandom int = 1
 )
 
 func checkErr(err error) {

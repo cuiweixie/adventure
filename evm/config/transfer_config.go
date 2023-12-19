@@ -11,4 +11,5 @@ type TransferConfig struct {
 	Threshold        int      `json:"threshold"`
 	AccountsFilePath string   `json:"accountsFilePath"`
 	PrivateKeys      []string
+	GasPrice         float64 `json:"gasprice"`
 }

@@ -13,6 +13,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+
+	"github.com/okex/adventure/evm/bench/utils"
 )
 
 func getPrivateKey(key string) *ecdsa.PrivateKey {
@@ -124,6 +126,7 @@ type wmtConfig struct {
 	ParaNum         int
 	SendOKTToWorker bool
 	Threshold       int
+	GasPrice        float64 `json:"gasprice"`
 }
 
 func loadWMTConfig(file string) *wmtConfig {
@@ -132,5 +135,6 @@ func loadWMTConfig(file string) *wmtConfig {
 	c := new(wmtConfig)
 	err = json.Unmarshal(data, c)
 	panicerr(err)
+	gasPrice = utils.ParseGasPriceToBigInt(c.GasPrice, 9)
 	return c
 }

@@ -21,6 +21,8 @@ var (
 	// used for flags
 	contract   string
 	configPath string
+	//configurable gasPrice
+	gasPrice = new(big.Int).SetUint64(10000000000)
 	// global variables
 	eParam utils.TxParam
 )
@@ -39,7 +41,7 @@ func erc20(cmd *cobra.Command, args []string) {
 		ethcmm.HexToAddress(contract),
 		nil,
 		uint64(3000000),
-		new(big.Int).SetUint64(1800000000),
+		gasPrice,
 		generateTxData(),
 	)
 
@@ -82,6 +84,7 @@ func loadConfig(configPath string) error {
 
 	privateKeys := common.ReadDataFromFile(config.TransferCfg.AccountsFilePath)
 	config.TransferCfg.PrivateKeys = privateKeys
+	gasPrice = utils.ParseGasPriceToBigInt(config.TransferCfg.GasPrice, 9)
 
 	return nil
 }

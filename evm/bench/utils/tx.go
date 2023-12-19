@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"log"
+	"math"
 	"math/big"
 	"strconv"
 	"strings"
@@ -39,6 +40,24 @@ var (
 	chainId      = new(big.Int).SetUint64(65)
 	signer       = types.NewLondonSigner(chainId)
 )
+
+// Default GasPrice for X1 is set to 10GWei/gas
+func ParseGasPriceToBigInt(gasPriceFloat float64, prec int) *big.Int {
+	mul, err := strconv.ParseFloat(fmt.Sprintf(`1%0`+strconv.Itoa(prec)+`s`, ""), 64)
+	if err != nil {
+		return new(big.Int).SetUint64(10000000000)
+	}
+	gasPriceWeiFloat := gasPriceFloat * mul
+	if hasDecimal(gasPriceWeiFloat) {
+		return new(big.Int).SetUint64(10000000000)
+	}
+	return new(big.Int).SetUint64(uint64(gasPriceWeiFloat))
+}
+
+func hasDecimal(num float64) bool {
+	intPart := math.Floor(num)
+	return intPart != num
+}
 
 /*
 *

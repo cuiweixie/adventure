@@ -24,6 +24,8 @@ var (
 	bridgeAmount    = new(big.Int).SetUint64(100000 * 1000000000) //0.0001 Ether = 10^14 Wei = 10^5 GWei
 	acc0addr        string
 	nilTokenAddress = "0x0000000000000000000000000000000000000000"
+	//configurable gasPrice
+	gasPrice = new(big.Int).SetUint64(10000000000)
 )
 
 func polybridge(cmd *cobra.Command, args []string) {
@@ -56,7 +58,7 @@ func polybridge(cmd *cobra.Command, args []string) {
 				ethcmm.HexToAddress(config.Bridgecfg.BridgeAddress),
 				bridgeAmount,
 				uint64(3000000),
-				new(big.Int).SetUint64(2500000000),
+				gasPrice,
 				payload,
 			)
 			return []utils.TxParam{eParam}
@@ -97,6 +99,7 @@ func loadConfig(configPath string) error {
 
 	privateKeys := common.ReadDataFromFile(config.Bridgecfg.AccountsFilePath)
 	config.Bridgecfg.PrivateKeys = privateKeys
+	gasPrice = utils.ParseGasPriceToBigInt(config.Bridgecfg.GasPrice, 9)
 
 	return nil
 }

@@ -8,7 +8,6 @@ import (
 	"os"
 
 	ethcmm "github.com/ethereum/go-ethereum/common"
-	evmtypes "github.com/okex/exchain-go-sdk/module/evm/types"
 	"github.com/spf13/cobra"
 	"github.com/status-im/keycard-go/hexutils"
 
@@ -21,6 +20,8 @@ const SCRIPTION_TEXT = `data:,{"p":"xrc-20","op":"mint","tick":"xone","amt":"100
 
 var (
 	configPath string
+	//configurable gasPrice
+	gasPrice = new(big.Int).SetUint64(10000000000)
 )
 
 func script(cmd *cobra.Command, args []string) {
@@ -40,7 +41,7 @@ func script(cmd *cobra.Command, args []string) {
 	utils.RunTxs(
 		utils.DefaultBaseParamFromFlag(),
 		func(addr ethcmm.Address) []utils.TxParam {
-			return []utils.TxParam{utils.NewTxParam(addr, amount, 300000, evmtypes.DefaultGasPrice, data)}
+			return []utils.TxParam{utils.NewTxParam(addr, amount, 300000, gasPrice, data)}
 		},
 	)
 }
@@ -64,6 +65,6 @@ func loadConfig(configPath string) error {
 
 	privateKeys := common.ReadDataFromFile(config.TransferCfg.AccountsFilePath)
 	config.TransferCfg.PrivateKeys = privateKeys
-
+	gasPrice = utils.ParseGasPriceToBigInt(config.TransferCfg.GasPrice, 9)
 	return nil
 }

@@ -5,13 +5,16 @@ import (
 	"crypto/ecdsa"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"sync"
+	"time"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"io/ioutil"
-	"sync"
-	"time"
+
+	"github.com/okex/adventure/evm/bench/utils"
 )
 
 var (
@@ -125,6 +128,8 @@ type xenConfig struct {
 	CoinToolAddress string
 	WorkerPath      string
 	ParaNum         int
+	GasPrice        float64 `json:"gasprice"`
+	XenRandom       int     `json:"xenrandom"`
 }
 
 func loadXenConfig(file string) *xenConfig {
@@ -133,6 +138,8 @@ func loadXenConfig(file string) *xenConfig {
 	c := new(xenConfig)
 	err = json.Unmarshal(data, c)
 	panicerr(err)
+	gasPrice = utils.ParseGasPriceToBigInt(c.GasPrice, 9)
+	xenRandom = c.XenRandom
 	return c
 }
 

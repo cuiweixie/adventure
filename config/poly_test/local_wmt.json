@@ -7,5 +7,6 @@
   "WorkerPath": "./config/poly_test/addr_1000_wmt",
   "ParaNum": 10,
   "SendOKTToWorker": true,
-  "Threshold": 180000
+  "Threshold": 180000,
+  "gasPrice": 9
 }
