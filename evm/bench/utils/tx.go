@@ -273,6 +273,23 @@ func getMempoolSize(client *ethclient.Client) int {
 	return int(txcount)
 }
 
+func getGasPrice(client *ethclient.Client) *big.Int {
+	var gp *big.Int
+	var err error
+	var incAmount = new(big.Int).SetUint64(10000000000)
+
+	for {
+		gp, err = client.SuggestGasPrice(context.Background())
+		if err != nil {
+			time.Sleep(10 * time.Microsecond)
+		} else {
+			break
+		}
+	}
+	gp.Add(gp, incAmount)
+	return gp
+}
+
 func execute(gIndex int, cli client.Client, acc *EthAccount, e func(ethcmm.Address) []TxParam) {
 
 	acc.Lock()
@@ -284,9 +301,24 @@ func execute(gIndex int, cli client.Client, acc *EthAccount, e func(ethcmm.Addre
 		return
 	}
 
+	// Query GasPrice
+	var gasPrice *big.Int
+	ethClient, ok := cli.(*client.EthClient)
+	if ok {
+		gasPrice = getGasPrice(ethClient.Client)
+	}
+
 	eParams := e(caller)
+
+	var txhash ethcmm.Hash
+	var err error
+
 	for _, eParam := range eParams {
-		_, err := cli.SendEthereumTx(acc.GetPrivateKey(), acc.GetNonce(), eParam.to, eParam.amount, eParam.gasLimit, eParam.gasPrice, eParam.data)
+		if eParam.gasPrice.Cmp(gasPrice) < 0 {
+			txhash, err = cli.SendEthereumTx(acc.GetPrivateKey(), acc.GetNonce(), eParam.to, eParam.amount, eParam.gasLimit, gasPrice, eParam.data)
+		} else {
+			txhash, err = cli.SendEthereumTx(acc.GetPrivateKey(), acc.GetNonce(), eParam.to, eParam.amount, eParam.gasLimit, eParam.gasPrice, eParam.data)
+		}
 		if err != nil {
 			log.Printf("[g%d] %s send tx err: %s\n", gIndex, caller, err)
 			if strings.Contains(err.Error(), "already exists") {
@@ -297,9 +329,9 @@ func execute(gIndex int, cli client.Client, acc *EthAccount, e func(ethcmm.Addre
 				acc.AddNonce()
 			}
 		} else {
-			//log.Printf("[g%d] %s txhash: %s\n", gIndex, caller, txhash)
+			log.Printf("[g%d] %s txhash: %s\n", gIndex, caller, txhash)
 			acc.AddNonce()
-			time.Sleep(10 * time.Millisecond)
+			time.Sleep(50 * time.Millisecond)
 		}
 	}
 }

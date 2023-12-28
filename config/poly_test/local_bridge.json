@@ -1,13 +1,13 @@
 {
   "L1RPC": [
-    "http://52.40.99.48:8545"
+    "https://testrpc.x1.tech/priapi/v1/rpc/sepolia"
   ],
   "L2RPC": [
-    "http://52.40.99.48:8123"
+    "https://testrpc.x1.tech"
   ],
-  "accountsFilePath": "./config/poly_test/addr_10_wmt",
+  "accountsFilePath": "./config/poly_test/addr_1_wmt",
   "concurrency": 1,
-  "threshold": 100,
-  "bridgeAddress": "0xFc2f92CBFA1b38a4B38B412F582cf08028cBA9e0",
-  "gasPrice": 9
+  "threshold": 1000000000000,
+  "bridgeAddress": "0x7a4Ee6f9F0aB037fE771FC36D39C1E19bcc0Fdb5",
+  "okbtokenAddress": "0x3F4B6664338F23d2397c953f2AB4Ce8031663f80",
 }

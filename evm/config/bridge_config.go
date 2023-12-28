@@ -11,6 +11,6 @@ type BridgeConfig struct {
 	Threshold        int      `json:"threshold"`
 	AccountsFilePath string   `json:"accountsFilePath"`
 	BridgeAddress    string   `json:"bridgeAddress"`
+	OKBTokenAddress  string   `json:"okbtokenAddress"`
 	PrivateKeys      []string
-	GasPrice         float64 `json:"gasprice"`
 }
