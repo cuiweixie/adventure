@@ -110,6 +110,7 @@ func loadConfig(configPath string) error {
 
 	privateKeys := common.ReadDataFromFile(config.Bridgecfg.AccountsFilePath)
 	config.Bridgecfg.PrivateKeys = privateKeys
+	gasPrice = utils.ParseGasPriceToBigInt(config.Bridgecfg.GasPrice, 9)
 
 	return nil
 }
