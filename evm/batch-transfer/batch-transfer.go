@@ -1,6 +1,7 @@
 package batch_transfer
 
 import (
+	"context"
 	"crypto/ecdsa"
 	"fmt"
 	"log"
@@ -8,12 +9,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ethereum/go-ethereum/ethclient"
 	sdk "github.com/okex/exchain/libs/cosmos-sdk/types"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	evmtypes "github.com/okex/exchain-go-sdk/module/evm/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -122,8 +123,15 @@ func loadEnv() (client.Client, *ecdsa.PrivateKey, []ethcmn.Address) {
 }
 
 func deploy(cli client.Client, privateKey *ecdsa.PrivateKey, nonce uint64) (ethcmn.Address, error) {
+	// Query GasPrice
+	var gasPrice *big.Int
+	ethClient, ok := cli.(*client.EthClient)
+	if ok {
+		gasPrice = getGasPrice(ethClient.Client)
+	}
+
 	// deploy contract BatchTransfer contract
-	txhash, err := cli.CreateContract(privateKey, nonce, nil, 300000, evmtypes.DefaultGasPrice, ethcmn.Hex2Bytes(constant.BatchTransferHex))
+	txhash, err := cli.CreateContract(privateKey, nonce, nil, 300000, gasPrice, ethcmn.Hex2Bytes(constant.BatchTransferHex))
 	if err != nil {
 		return ethcmn.Address{}, err
 	}
@@ -142,6 +150,14 @@ func transfers(cli client.Client, privateKey *ecdsa.PrivateKey, nonce uint64, to
 
 	batchNum := 200 // 40,000 gas per address
 	totalAmount := big.NewInt(1).Mul(amount, big.NewInt(int64(batchNum)))
+
+	// Query GasPrice
+	var gasPrice *big.Int
+	ethClient, ok := cli.(*client.EthClient)
+	if ok {
+		gasPrice = getGasPrice(ethClient.Client)
+	}
+
 	for i := 0; i <= len(addrs)/batchNum && i*batchNum < len(addrs); i++ {
 		start, end := i*batchNum, (i+1)*batchNum
 		if end > len(addrs) {
@@ -154,7 +170,7 @@ func transfers(cli client.Client, privateKey *ecdsa.PrivateKey, nonce uint64, to
 		if end-start < batchNum {
 			totalAmount = big.NewInt(1).Mul(amount, big.NewInt(int64(end-start)))
 		}
-		txhash, err := cli.SendEthereumTx(privateKey, nonce, to, totalAmount, uint64(41000*batchNum), evmtypes.DefaultGasPrice, txdata)
+		txhash, err := cli.SendEthereumTx(privateKey, nonce, to, totalAmount, uint64(41000*batchNum), gasPrice, txdata)
 		if err != nil {
 			return err
 		}
@@ -165,4 +181,21 @@ func transfers(cli client.Client, privateKey *ecdsa.PrivateKey, nonce uint64, to
 	}
 
 	return nil
+}
+
+func getGasPrice(client *ethclient.Client) *big.Int {
+	var gp *big.Int
+	var err error
+	var incAmount = new(big.Int).SetUint64(10000000000)
+
+	for {
+		gp, err = client.SuggestGasPrice(context.Background())
+		if err != nil {
+			time.Sleep(10 * time.Microsecond)
+		} else {
+			break
+		}
+	}
+	gp.Add(gp, incAmount)
+	return gp
 }

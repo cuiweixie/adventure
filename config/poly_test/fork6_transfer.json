@@ -1,0 +1,9 @@
+{
+  "rpc": [
+    "https://testrpc.x1.tech"
+  ],
+  "accountsFilePath": "./config/poly_test/addr_1_wmt",
+  "concurrency": 1,
+  "threshold": 180,
+  "gasPrice": 9
+}
