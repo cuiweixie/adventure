@@ -22,7 +22,7 @@ var (
 	contract   string
 	configPath string
 	//configurable gasPrice
-	gasPrice = new(big.Int).SetUint64(10000000000)
+	gasPrice = new(big.Int).SetUint64(1)
 	// global variables
 	eParam utils.TxParam
 )

@@ -13,7 +13,6 @@ import (
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
-	sdk "github.com/okex/exchain/libs/cosmos-sdk/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -47,8 +46,13 @@ func erc20init(cmd *cobra.Command, args []string) {
 	}
 	time.Sleep(time.Second * 5)
 
+	amount, ok := new(big.Int).SetString(args[0], 10)
+	if !ok {
+		panic("failed to parse amount")
+	}
+
 	// 1.3 transfers Native Token
-	if err := transfers(cli, privateKey, nonce+1, nativeAddr, sdk.MustNewDecFromStr(args[0]).Int, addrs); err != nil {
+	if err := transfers(cli, privateKey, nonce+1, nativeAddr, amount, addrs); err != nil {
 		log.Println(fmt.Errorf("failed to transfer Native Token, error: %s", err))
 		return
 	}
@@ -298,7 +302,10 @@ func transferERC20(cli client.Client, privateKey *ecdsa.PrivateKey, nonce uint64
 	return nil
 }
 
+var defaultGasPrice = big.NewInt(1)
+
 func getGasPrice(client *ethclient.Client) *big.Int {
+	return defaultGasPrice
 	var gp *big.Int
 	var err error
 	var incAmount = new(big.Int).SetUint64(10000000000)
