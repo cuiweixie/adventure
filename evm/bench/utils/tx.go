@@ -236,6 +236,7 @@ func RunTxs(p BasepParam, e func(ethcmm.Address) []TxParam) {
 					//fmt.Printf("Mempool size: %d\n", mempoolSize)
 					if ok && mempoolSize.(int) >= config.TransferCfg.Threshold {
 						fmt.Println("达到阈值")
+						time.Sleep(time.Millisecond * 100)
 						continue
 					}
 					execute(gIndex, cli, acc, e)
