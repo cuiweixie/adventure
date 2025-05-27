@@ -116,10 +116,17 @@ func (e EthClient) SendMultipleEthereumTx(signedTxs []*types.Transaction) ([]eth
 	txHashes := make([]string, len(signedTxs))
 
 	for i, signedTx := range signedTxs {
+		// 将交易编码为十六进制字符串
+		txData, err := signedTx.MarshalBinary()
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal tx %d: %v", i, err)
+		}
+		txHex := "0x" + fmt.Sprintf("%x", txData)
+
 		// 准备批量RPC调用元素
 		batch[i] = rpc.BatchElem{
 			Method: "eth_sendRawTransaction",
-			Args:   []interface{}{signedTx},
+			Args:   []interface{}{txHex},
 			Result: &txHashes[i],
 		}
 	}
