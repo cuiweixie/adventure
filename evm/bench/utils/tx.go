@@ -14,6 +14,7 @@ import (
 	"time"
 
 	ethcmm "github.com/ethereum/go-ethereum/common"
+	ethcmn "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rlp"
@@ -39,7 +40,20 @@ var (
 	lstRlpEncode = make([]string, 0)
 	chainId      = new(big.Int).SetUint64(65)
 	signer       = types.NewLondonSigner(chainId)
+
+	// chainId缓存 - 所有节点共享同一个chainId
+	cachedChainId *big.Int
+	chainIdOnce   sync.Once
 )
+
+// 获取缓存的chainId - 只查询一次
+func getCachedChainId(ethClient *client.EthClient) (*big.Int, error) {
+	var err error
+	chainIdOnce.Do(func() {
+		cachedChainId, err = ethClient.ChainID(context.Background())
+	})
+	return cachedChainId, err
+}
 
 // Default GasPrice for X1 is set to 10GWei/gas
 func ParseGasPriceToBigInt(gasPriceFloat float64, prec int) *big.Int {
@@ -227,21 +241,26 @@ func RunTxs(p BasepParam, e func(ethcmm.Address) []TxParam) {
 	count := len(accounts) / concurrency
 	for i := 0; i < concurrency; i++ {
 		go func(gIndex int) {
-			for j := 0; ; j++ {
-				for index := gIndex * count; index < (gIndex+1)*count; index++ {
-					acc := accounts[index]
-					cli := clients[index%len(clients)]
-
-					mempoolSize, ok := mempoolSizeMap.Load(0)
-					//fmt.Printf("Mempool size: %d\n", mempoolSize)
-					if ok && mempoolSize.(int) >= config.TransferCfg.Threshold {
-						fmt.Println("达到阈值")
-						time.Sleep(time.Millisecond * 500)
-						continue
-					}
-					execute(gIndex, cli, acc, e)
-					time.Sleep(time.Millisecond * 2)
+			for {
+				start := gIndex * count
+				end := start + count
+				if end > len(accounts) {
+					end = len(accounts)
 				}
+				batchAccounts := accounts[start:end]
+
+				mempoolSize, ok := mempoolSizeMap.Load(0)
+				//fmt.Printf("Mempool size: %d\n", mempoolSize)
+				if ok && mempoolSize.(int) >= config.TransferCfg.Threshold {
+					fmt.Println("达到阈值")
+					time.Sleep(time.Millisecond * 500)
+					continue
+				}
+
+				// 使用批量执行
+				cli := clients[gIndex%len(clients)]
+				executeBatch(gIndex, cli, batchAccounts, e)
+				time.Sleep(time.Millisecond * 10) // 批量发送后稍微休息长一点
 
 			}
 		}(i)
@@ -295,6 +314,118 @@ func getGasPrice(client *ethclient.Client) *big.Int {
 
 var defaultGasPrice = big.NewInt(1)
 
+// 批量执行多个账户的交易
+func executeBatch(gIndex int, cli client.Client, accounts []*EthAccount, e func(ethcmm.Address) []TxParam) {
+	const maxBatchSize = 100
+
+	// 检查是否支持批量发送
+	ethClient, ok := cli.(*client.EthClient)
+	if !ok {
+		panic("eth client is not a eth client")
+	}
+
+	// 获取交易参数模板（只用第一个账户的第一个交易作为模板）
+	if len(accounts) == 0 {
+		return
+	}
+
+	eParams := e(accounts[0].caller)
+	txTemplate := eParams[0] // 永远只有1个，所有交易都用相同的参数
+
+	// 计算总交易数
+	totalTxs := len(accounts)
+
+	// 分批发送，每批最多100笔
+	for i := 0; i < totalTxs; i += maxBatchSize {
+		end := i + maxBatchSize
+		if end > totalTxs {
+			end = totalTxs
+		}
+
+		startAccountIndex := i
+		endAccountIndex := end
+		if endAccountIndex > len(accounts) {
+			endAccountIndex = len(accounts)
+		}
+
+		// 发送这一批
+		sendSimpleBatch(gIndex, ethClient, txTemplate, accounts[startAccountIndex:endAccountIndex])
+
+		// 批次间休息
+		if end < totalTxs {
+			time.Sleep(time.Millisecond * 5)
+		}
+	}
+}
+
+func sendSimpleBatch(gIndex int, ethClient *client.EthClient, txTemplate TxParam, accounts []*EthAccount) {
+	if len(accounts) == 0 {
+		return
+	}
+
+	// 构造并签名所有交易
+	var signedTxs []*types.Transaction
+	chainId, err := getCachedChainId(ethClient)
+	if err != nil {
+		log.Printf("[g%d] failed to get chainId: %v\n", gIndex, err)
+		return
+	}
+	signer := types.NewLondonSigner(chainId)
+
+	for _, acc := range accounts {
+		acc.Lock()
+		if err := acc.SetNonce(ethClient); err != nil {
+			log.Printf("[g%d] failed to query nonce: %s\n", gIndex, err)
+			acc.Unlock()
+			continue
+		}
+
+		// 创建交易
+		unsignedTx := types.NewTransaction(
+			acc.GetNonce(),
+			txTemplate.to,
+			txTemplate.amount,
+			txTemplate.gasLimit,
+			defaultGasPrice,
+			txTemplate.data,
+		)
+
+		// 签名交易
+		signedTx, err := types.SignTx(unsignedTx, signer, acc.GetPrivateKey())
+		if err != nil {
+			log.Printf("[g%d] failed to sign tx: %v\n", gIndex, err)
+			acc.Unlock()
+			continue
+		}
+
+		signedTxs = append(signedTxs, signedTx)
+		acc.Unlock()
+	}
+
+	if len(signedTxs) == 0 {
+		return
+	}
+
+	// 使用批量发送接口
+	txHashes, err := ethClient.SendMultipleEthereumTx(signedTxs)
+	if err != nil {
+		log.Printf("[g%d] batch send failed: %v\n", gIndex, err)
+		return
+	}
+
+	// 统计成功的交易并更新nonce
+	successCount := 0
+	for i, txHash := range txHashes {
+		if txHash != (ethcmn.Hash{}) {
+			// 发送成功，更新对应账户的nonce
+			accounts[i].AddNonce()
+			successCount++
+		}
+	}
+
+	log.Printf("[g%d] batch sent %d/%d transactions successfully\n", gIndex, successCount, len(signedTxs))
+}
+
 func execute(gIndex int, cli client.Client, acc *EthAccount, e func(ethcmm.Address) []TxParam) {
 
 	acc.Lock()
@@ -307,44 +438,17 @@ func execute(gIndex int, cli client.Client, acc *EthAccount, e func(ethcmm.Addre
 	}
 
 	eParams := e(caller)
+	if len(eParams) == 0 {
+		return
+	}
 
-	var err error
-
+	// 单个发送
 	for _, eParam := range eParams {
-		// 智能重试机制：只对连接相关错误进行快速重试
-		maxRetries := 3
-		for retry := 0; retry <= maxRetries; retry++ {
-			_, err = cli.SendEthereumTx(acc.GetPrivateKey(), acc.GetNonce(), eParam.to, eParam.amount, eParam.gasLimit, defaultGasPrice, eParam.data)
-
-			if err == nil {
-				// 成功发送
-				acc.AddNonce()
-				break
-			}
-
-			// 错误处理
-			if strings.Contains(err.Error(), "already exists") {
-				acc.AddNonce()
-				break
-			} else if strings.Contains(err.Error(), "invalid nonce") {
-				acc.AddNonce()
-				break
-			} else if strings.Contains(err.Error(), "mempool is full") {
-				// mempool满了，不重试，直接跳过
-				break
-			} else if strings.Contains(err.Error(), "cannot assign requested address") ||
-				strings.Contains(err.Error(), "connection refused") ||
-				strings.Contains(err.Error(), "EOF") {
-				// 连接相关错误，进行快速重试
-				if retry < maxRetries {
-					time.Sleep(time.Millisecond * time.Duration(1<<retry)) // 指数退避：1ms, 2ms, 4ms
-					continue
-				}
-			}
-
-			// 其他错误或重试次数用完
-			log.Printf("[g%d] %s send tx err after %d retries: %s\n", gIndex, caller, retry+1, err)
-			break
+		_, err := cli.SendEthereumTx(acc.GetPrivateKey(), acc.GetNonce(), eParam.to, eParam.amount, eParam.gasLimit, defaultGasPrice, eParam.data)
+		if err == nil {
+			acc.AddNonce()
+		} else {
+			log.Printf("[g%d] %s send tx err: %s\n", gIndex, caller, err)
 		}
 	}
 }

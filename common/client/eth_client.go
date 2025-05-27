@@ -16,7 +16,8 @@ import (
 
 type EthClient struct {
 	*ethclient.Client
-	signer types.Signer
+	rpcClient *rpc.Client
+	signer    types.Signer
 }
 
 // 创建优化的HTTP客户端，用于连接池
@@ -53,6 +54,7 @@ func NewEthClient(ip string) (*EthClient, error) {
 
 	return &EthClient{
 		cli,
+		rpcClient,
 		types.NewLondonSigner(chainId),
 	}, nil
 }
@@ -101,4 +103,54 @@ func (e EthClient) CreateContract(privatekey *ecdsa.PrivateKey, nonce uint64, am
 	}
 
 	return signedTx.Hash(), err
+}
+
+// 批量发送已签名的交易
+func (e EthClient) SendMultipleEthereumTx(signedTxs []*types.Transaction) ([]ethcmn.Hash, error) {
+	if len(signedTxs) == 0 {
+		return nil, fmt.Errorf("empty transaction list")
+	}
+
+	// 准备批量RPC请求
+	batch := make([]rpc.BatchElem, len(signedTxs))
+	txHashes := make([]string, len(signedTxs))
+
+	for i, signedTx := range signedTxs {
+		// 准备批量RPC调用元素
+		batch[i] = rpc.BatchElem{
+			Method: "eth_sendRawTransaction",
+			Args:   []interface{}{signedTx},
+			Result: &txHashes[i],
+		}
+	}
+
+	// 执行批量RPC调用 - 这里只有一次HTTP请求！
+	err := e.rpcClient.BatchCall(batch)
+	if err != nil {
+		return nil, fmt.Errorf("batch call failed: %v", err)
+	}
+
+	// 处理结果
+	var resultHashes []ethcmn.Hash
+	var errors []string
+
+	for i, elem := range batch {
+		if elem.Error != nil {
+			errors = append(errors, fmt.Sprintf("tx %d: %v", i, elem.Error))
+			resultHashes = append(resultHashes, ethcmn.Hash{})
+		} else {
+			// 将字符串转换为Hash
+			if txHashes[i] != "" {
+				resultHashes = append(resultHashes, ethcmn.HexToHash(txHashes[i]))
+			} else {
+				resultHashes = append(resultHashes, ethcmn.Hash{})
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return resultHashes, fmt.Errorf("batch errors: %v", errors)
+	}
+
+	return resultHashes, nil
 }

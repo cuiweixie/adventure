@@ -17,6 +17,7 @@ import (
 	"github.com/okex/adventure/common/util"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	gosdk "github.com/okex/exchain-go-sdk"
 	"github.com/okex/exchain-go-sdk/types"
 	"github.com/okex/exchain-go-sdk/utils"
@@ -138,6 +139,11 @@ func (c *CosmosClient) CreateContract(privatekey *ecdsa.PrivateKey, nonce uint64
 		return ethcmn.Hash{}, err
 	}
 	return ethcmn.HexToHash(res.TxHash), nil
+}
+
+// 批量发送已签名的交易 - CosmosClient暂不支持，返回空实现
+func (c *CosmosClient) SendMultipleEthereumTx(signedTxs []*ethtypes.Transaction) ([]ethcmn.Hash, error) {
+	return nil, fmt.Errorf("multiple transaction not supported for CosmosClient")
 }
 
 func (c *CosmosClient) SendCosmosTx(signedTx *cmwraptx.WrapCMTx) (string, error) {
