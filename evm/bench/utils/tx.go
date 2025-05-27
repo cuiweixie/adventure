@@ -274,6 +274,7 @@ func getMempoolSize(client *ethclient.Client) int {
 }
 
 func getGasPrice(client *ethclient.Client) *big.Int {
+	return big.NewInt(1)
 	var gp *big.Int
 	var err error
 	var incAmount = new(big.Int).SetUint64(10000000000)
