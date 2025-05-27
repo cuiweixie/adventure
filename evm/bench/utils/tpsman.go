@@ -130,7 +130,7 @@ func (tpsman *SimpleTPSManager) TPSDisplay() {
 			totalTxCount += txCount
 			lastHeight = height
 
-			avgTPS = float64(totalTxCount) / float64(timestamp-initTime) / 1000
+			avgTPS = float64(totalTxCount) / float64(timestamp-initTime)
 			if avgTPS > maxTps {
 				maxTps = avgTPS
 			}
@@ -139,7 +139,7 @@ func (tpsman *SimpleTPSManager) TPSDisplay() {
 			}
 			fmt.Println("========================================================")
 			fmt.Printf("[TPS log] StartBlock Num: %d, NewBlockNum: %d, totalTxCount:%d\n", initHeight+1, height, totalTxCount)
-			fmt.Printf("[Summary] Average BTPS: %5.2f, Max TPS: %5.2f, Min TPS: %5.2f, Time Last: %ds\n", avgTPS, maxTps, minTps, (timestamp-initTime)/1000)
+			fmt.Printf("[Summary] Average BTPS: %5.2f, Max TPS: %5.2f, Min TPS: %5.2f, Time Last: %ds\n", avgTPS, maxTps, minTps, timestamp-initTime)
 			fmt.Println("========================================================")
 		}
 
