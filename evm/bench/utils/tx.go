@@ -217,7 +217,7 @@ func RunTxs(p BasepParam, e func(ethcmm.Address) []TxParam) {
 		for {
 			size := getMempoolSize(client)
 			mempoolSizeMap.Store(0, size)
-			time.Sleep(500 * time.Millisecond)
+			time.Sleep(time.Second)
 		}
 	}(cli)
 
@@ -236,7 +236,7 @@ func RunTxs(p BasepParam, e func(ethcmm.Address) []TxParam) {
 					//fmt.Printf("Mempool size: %d\n", mempoolSize)
 					if ok && mempoolSize.(int) >= config.TransferCfg.Threshold {
 						fmt.Println("达到阈值")
-						time.Sleep(time.Millisecond * 100)
+						time.Sleep(time.Millisecond * 500)
 						continue
 					}
 					execute(gIndex, cli, acc, e)
@@ -266,7 +266,7 @@ func getMempoolSize(client *ethclient.Client) int {
 	for {
 		txcount, err = client.PendingTransactionCount(context.Background())
 		if err != nil {
-			time.Sleep(1000 * time.Microsecond)
+			time.Sleep(time.Second)
 		} else {
 			break
 		}
