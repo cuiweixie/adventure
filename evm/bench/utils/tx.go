@@ -219,6 +219,7 @@ func RunTxs(p BasepParam, e func(ethcmm.Address) []TxParam) {
 	clients := client.GenerateClients(config.TransferCfg.Rpc)    // generate CosmosClient or EthClient
 	accounts := generateAccounts(config.TransferCfg.PrivateKeys) // generate accounts
 	mempoolSizeMap := &sync.Map{}
+	mempoolSizeMap.Store(0, int(0))
 
 	// ethClient for mempool query
 	cli, err := ethclient.Dial(config.TransferCfg.Rpc[0])
