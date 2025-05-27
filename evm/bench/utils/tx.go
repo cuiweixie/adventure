@@ -302,26 +302,17 @@ func execute(gIndex int, cli client.Client, acc *EthAccount, e func(ethcmm.Addre
 		return
 	}
 
-	// Query GasPrice
-	var gasPrice *big.Int
-	ethClient, ok := cli.(*client.EthClient)
-	if ok {
-		gasPrice = getGasPrice(ethClient.Client)
-	}
-
 	eParams := e(caller)
 
 	var txhash ethcmm.Hash
 	var err error
 
 	for _, eParam := range eParams {
-		if eParam.gasPrice.Cmp(gasPrice) < 0 {
-			txhash, err = cli.SendEthereumTx(acc.GetPrivateKey(), acc.GetNonce(), eParam.to, eParam.amount, eParam.gasLimit, gasPrice, eParam.data)
-		} else {
-			txhash, err = cli.SendEthereumTx(acc.GetPrivateKey(), acc.GetNonce(), eParam.to, eParam.amount, eParam.gasLimit, eParam.gasPrice, eParam.data)
-		}
+
+		txhash, err = cli.SendEthereumTx(acc.GetPrivateKey(), acc.GetNonce(), eParam.to, eParam.amount, eParam.gasLimit, eParam.gasPrice, eParam.data)
+
 		if err != nil {
-			log.Printf("[g%d] %s send tx err: %s\n", gIndex, caller, err)
+			log.Printf("[g%d] %s send tx err: %s, amount: %s, gasPrice: %s\n", gIndex, caller, err, eParam.amount.String(), eParam.gasPrice.String())
 			if strings.Contains(err.Error(), "already exists") {
 				acc.AddNonce()
 			} else if strings.Contains(err.Error(), "mempool is full") {
