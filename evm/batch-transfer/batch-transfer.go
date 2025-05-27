@@ -9,12 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ethereum/go-ethereum/ethclient"
-	sdk "github.com/okex/exchain/libs/cosmos-sdk/types"
-
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -30,6 +28,7 @@ var (
 )
 
 func batchTransfer(cmd *cobra.Command, args []string) {
+
 	// 0.1 load env parameters
 	cli, privateKey, addrs := loadEnv()
 	// query nonce
@@ -46,9 +45,12 @@ func batchTransfer(cmd *cobra.Command, args []string) {
 		return
 	}
 	time.Sleep(time.Second * 5)
-
 	// 2. transfers
-	if err := transfers(cli, privateKey, nonce+1, contractAddr, sdk.MustNewDecFromStr(args[0]).Int, addrs); err != nil {
+	amount, ok := new(big.Int).SetString(args[0], 10)
+	if !ok {
+		panic("failed to parse amount")
+	}
+	if err := transfers(cli, privateKey, nonce+1, contractAddr, amount, addrs); err != nil {
 		log.Println(fmt.Errorf("failed to transfer, error: %s", err))
 		return
 	}
@@ -183,7 +185,10 @@ func transfers(cli client.Client, privateKey *ecdsa.PrivateKey, nonce uint64, to
 	return nil
 }
 
+var defaultGasPrice = big.NewInt(1)
+
 func getGasPrice(client *ethclient.Client) *big.Int {
+	return defaultGasPrice
 	var gp *big.Int
 	var err error
 	var incAmount = new(big.Int).SetUint64(10000000000)
