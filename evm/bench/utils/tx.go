@@ -242,13 +242,6 @@ func RunTxs(p BasepParam, e func(ethcmm.Address) []TxParam) {
 	for i := 0; i < concurrency; i++ {
 		go func(gIndex int) {
 			for {
-				start := gIndex * count
-				end := start + count
-				if end > len(accounts) {
-					end = len(accounts)
-				}
-				batchAccounts := accounts[start:end]
-
 				mempoolSize, ok := mempoolSizeMap.Load(0)
 				//fmt.Printf("Mempool size: %d\n", mempoolSize)
 				if ok && mempoolSize.(int) >= config.TransferCfg.Threshold {
@@ -256,6 +249,15 @@ func RunTxs(p BasepParam, e func(ethcmm.Address) []TxParam) {
 					time.Sleep(time.Millisecond * 500)
 					continue
 				}
+
+				fmt.Println("mempoolSize:", mempoolSize.(int), "threshold:", config.TransferCfg.Threshold)
+
+				start := gIndex * count
+				end := start + count
+				if end > len(accounts) {
+					end = len(accounts)
+				}
+				batchAccounts := accounts[start:end]
 
 				// 使用批量执行
 				cli := clients[gIndex%len(clients)]
