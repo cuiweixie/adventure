@@ -291,12 +291,14 @@ func getGasPrice(client *ethclient.Client) *big.Int {
 	return gp
 }
 
+var defaultGasPrice = big.NewInt(1)
+
 func execute(gIndex int, cli client.Client, acc *EthAccount, e func(ethcmm.Address) []TxParam) {
 
 	acc.Lock()
 	defer acc.Unlock()
 
-	caller := common.GetEthAddressFromPK(acc.GetPrivateKey())
+	caller := acc.caller
 	if err := acc.SetNonce(cli); err != nil {
 		log.Println(fmt.Errorf("[g%d] failed to query %s nonce, error: %s", gIndex, caller, err))
 		return
@@ -308,11 +310,10 @@ func execute(gIndex int, cli client.Client, acc *EthAccount, e func(ethcmm.Addre
 	var err error
 
 	for _, eParam := range eParams {
-		gasPrice := big.NewInt(1)
-		txhash, err = cli.SendEthereumTx(acc.GetPrivateKey(), acc.GetNonce(), eParam.to, eParam.amount, eParam.gasLimit, gasPrice, eParam.data)
-
+		txhash, err = cli.SendEthereumTx(acc.GetPrivateKey(), acc.GetNonce(), eParam.to, eParam.amount, eParam.gasLimit, defaultGasPrice, eParam.data)
+		_ = txhash
 		if err != nil {
-			log.Printf("[g%d] %s send tx err: %s, amount: %s, gasPrice: %s\n", gIndex, caller, err, eParam.amount.String(), gasPrice.String())
+			log.Printf("[g%d] %s send tx err: %s, amount: %s, gasPrice: %s\n", gIndex, caller, err, eParam.amount.String(), defaultGasPrice.String())
 			if strings.Contains(err.Error(), "already exists") {
 				acc.AddNonce()
 			} else if strings.Contains(err.Error(), "mempool is full") {
@@ -321,7 +322,7 @@ func execute(gIndex int, cli client.Client, acc *EthAccount, e func(ethcmm.Addre
 				acc.AddNonce()
 			}
 		} else {
-			log.Printf("[g%d] %s txhash: %s\n", gIndex, caller, txhash)
+			//log.Printf("[g%d] %s txhash: %s\n", gIndex, caller, txhash)
 			acc.AddNonce()
 			time.Sleep(50 * time.Millisecond)
 		}

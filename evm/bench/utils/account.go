@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"sync"
 
+	ethcmm "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/okex/adventure/common"
 	"github.com/okex/adventure/common/client"
@@ -14,6 +15,7 @@ type EthAccount struct {
 	nonce      uint64
 	queried    bool
 	privateKey *ecdsa.PrivateKey
+	caller     ethcmm.Address
 }
 
 func generateAccounts(privkeys []string) (accounts []*EthAccount) {
@@ -23,7 +25,7 @@ func generateAccounts(privkeys []string) (accounts []*EthAccount) {
 			panic(err)
 		}
 
-		accounts = append(accounts, &EthAccount{new(sync.Mutex), 0, false, privateKey})
+		accounts = append(accounts, &EthAccount{new(sync.Mutex), 0, false, privateKey, common.GetEthAddressFromPK(privateKey)})
 	}
 	return
 }
@@ -41,7 +43,7 @@ func (a *EthAccount) SetNonce(cli client.Client) error {
 		return nil
 	}
 
-	nonce, err := cli.QueryNonce(common.GetEthAddressFromPK(a.privateKey).String())
+	nonce, err := cli.QueryNonce(a.caller.String())
 	if err != nil {
 		return err
 	}

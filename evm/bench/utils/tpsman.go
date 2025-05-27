@@ -65,7 +65,8 @@ func (tpsman *SimpleTPSManager) GetBlockNum() uint64 {
 }
 
 func (tpsman *SimpleTPSManager) TPSDisplay() {
-	for true {
+	fmt.Println("TPSDisplay")
+	for {
 		newblockNum := tpsman.GetBlockNum()
 		// No tx is executed
 		if tpsman.lastBlockNum == newblockNum {
