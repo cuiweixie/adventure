@@ -5,10 +5,13 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"math/big"
+	"net/http"
+	"time"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/rpc"
 )
 
 type EthClient struct {
@@ -16,11 +19,31 @@ type EthClient struct {
 	signer types.Signer
 }
 
-func NewEthClient(ip string) (*EthClient, error) {
-	cli, err := ethclient.Dial(ip)
-	if err != nil {
-		return nil, fmt.Errorf("failed to initialize client: %+v", err)
+// 创建优化的HTTP客户端，用于连接池
+func createOptimizedHTTPClient() *http.Client {
+	transport := &http.Transport{
+		MaxIdleConns:        100,              // 最大空闲连接数
+		MaxIdleConnsPerHost: 20,               // 每个主机的最大空闲连接数
+		IdleConnTimeout:     90 * time.Second, // 空闲连接超时
+		DisableKeepAlives:   false,            // 启用keep-alive
 	}
+
+	return &http.Client{
+		Transport: transport,
+		Timeout:   30 * time.Second, // 请求超时
+	}
+}
+
+func NewEthClient(ip string) (*EthClient, error) {
+	// 使用优化的HTTP客户端创建RPC客户端
+	httpClient := createOptimizedHTTPClient()
+	rpcClient, err := rpc.DialHTTPWithClient(ip, httpClient)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize rpc client: %+v", err)
+	}
+
+	// 基于RPC客户端创建以太坊客户端
+	cli := ethclient.NewClient(rpcClient)
 
 	chainId, err := cli.ChainID(context.Background())
 	if err != nil {

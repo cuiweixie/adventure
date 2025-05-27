@@ -240,6 +240,7 @@ func RunTxs(p BasepParam, e func(ethcmm.Address) []TxParam) {
 						continue
 					}
 					execute(gIndex, cli, acc, e)
+					time.Sleep(time.Millisecond * 2)
 				}
 
 			}
@@ -307,25 +308,43 @@ func execute(gIndex int, cli client.Client, acc *EthAccount, e func(ethcmm.Addre
 
 	eParams := e(caller)
 
-	var txhash ethcmm.Hash
 	var err error
 
 	for _, eParam := range eParams {
-		txhash, err = cli.SendEthereumTx(acc.GetPrivateKey(), acc.GetNonce(), eParam.to, eParam.amount, eParam.gasLimit, defaultGasPrice, eParam.data)
-		_ = txhash
-		if err != nil {
-			log.Printf("[g%d] %s send tx err: %s, amount: %s, gasPrice: %s\n", gIndex, caller, err, eParam.amount.String(), defaultGasPrice.String())
+		// 智能重试机制：只对连接相关错误进行快速重试
+		maxRetries := 3
+		for retry := 0; retry <= maxRetries; retry++ {
+			_, err = cli.SendEthereumTx(acc.GetPrivateKey(), acc.GetNonce(), eParam.to, eParam.amount, eParam.gasLimit, defaultGasPrice, eParam.data)
+
+			if err == nil {
+				// 成功发送
+				acc.AddNonce()
+				break
+			}
+
+			// 错误处理
 			if strings.Contains(err.Error(), "already exists") {
 				acc.AddNonce()
-			} else if strings.Contains(err.Error(), "mempool is full") {
-				//time.Sleep(time.Second)
+				break
 			} else if strings.Contains(err.Error(), "invalid nonce") {
 				acc.AddNonce()
+				break
+			} else if strings.Contains(err.Error(), "mempool is full") {
+				// mempool满了，不重试，直接跳过
+				break
+			} else if strings.Contains(err.Error(), "cannot assign requested address") ||
+				strings.Contains(err.Error(), "connection refused") ||
+				strings.Contains(err.Error(), "EOF") {
+				// 连接相关错误，进行快速重试
+				if retry < maxRetries {
+					time.Sleep(time.Millisecond * time.Duration(1<<retry)) // 指数退避：1ms, 2ms, 4ms
+					continue
+				}
 			}
-		} else {
-			//log.Printf("[g%d] %s txhash: %s\n", gIndex, caller, txhash)
-			acc.AddNonce()
-			time.Sleep(50 * time.Millisecond)
+
+			// 其他错误或重试次数用完
+			log.Printf("[g%d] %s send tx err after %d retries: %s\n", gIndex, caller, retry+1, err)
+			break
 		}
 	}
 }
