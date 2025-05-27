@@ -3,13 +3,15 @@ package utils
 import (
 	"context"
 	"fmt"
+	"github.com/ethereum/go-ethereum/core/types"
+	"math/big"
 	"time"
 
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
 type SimpleTPSManager struct {
-	client ethclient.Client
+	ethclient.Client
 	// time recorder for average TPS
 	aveStartTime time.Time
 	// time recorder for instant TPS
@@ -28,22 +30,13 @@ func NewTPSMan(clientURL string) *SimpleTPSManager {
 	if err != nil {
 		panic(fmt.Errorf("failed to initialize tps query client: %+v", err))
 	}
-	//Init BlockNumber
-	var initBlockNum uint64
-	for {
-		initBlockNum, err = client.BlockNumber(context.Background())
-		if err != nil {
-			time.Sleep(1000 * time.Microsecond)
-		} else {
-			break
-		}
-	}
+
 	return &SimpleTPSManager{
-		client:        *client,
+		Client:        *client,
 		aveStartTime:  time.Now(),
 		insStartTime:  time.Now(),
-		startBlockNum: initBlockNum,
-		lastBlockNum:  initBlockNum,
+		startBlockNum: 0,
+		lastBlockNum:  0,
 		maxTPS:        -1,
 		minTPS:        1000000,
 	}
@@ -54,9 +47,9 @@ func (tpsman *SimpleTPSManager) GetBlockNum() uint64 {
 	var err error
 
 	for {
-		blockCount, err = tpsman.client.BlockNumber(context.Background())
+		blockCount, err = tpsman.BlockNumber(context.Background())
 		if err != nil {
-			time.Sleep(1000 * time.Microsecond)
+			time.Sleep(200 * time.Millisecond)
 		} else {
 			break
 		}
@@ -64,38 +57,92 @@ func (tpsman *SimpleTPSManager) GetBlockNum() uint64 {
 	return blockCount
 }
 
+func (tpsman *SimpleTPSManager) BlockHeder(height uint64) *types.Header {
+	for {
+		header, err := tpsman.HeaderByNumber(context.Background(), big.NewInt(int64(height)))
+		if err != nil {
+			time.Sleep(time.Millisecond * 200)
+		} else {
+			return header
+		}
+	}
+}
+
+func (tpsman *SimpleTPSManager) transactionCountAndTimestamp(height uint64) (uint64, uint64) {
+	var header *types.Header
+	var err error
+	for {
+		header, err = tpsman.HeaderByNumber(context.Background(), big.NewInt(int64(height)))
+		if err != nil {
+			time.Sleep(time.Millisecond * 200)
+		} else {
+			break
+		}
+	}
+
+	var txCount uint
+	for {
+		txCount, err = tpsman.TransactionCount(context.Background(), header.Hash())
+		if err != nil {
+			time.Sleep(time.Millisecond * 200)
+		} else {
+			return uint64(txCount), header.Time
+		}
+	}
+}
+
 func (tpsman *SimpleTPSManager) TPSDisplay() {
 	fmt.Println("TPSDisplay")
+	var initHeight uint64
+	var totalTxCount uint64
+	var initTime uint64
+	for {
+		height := tpsman.GetBlockNum()
+		header, err := tpsman.HeaderByNumber(context.Background(), big.NewInt(int64(height)))
+		if err != nil {
+			panic(err)
+		}
+		txCount, err := tpsman.TransactionCount(context.Background(), header.Hash())
+		if err != nil {
+			panic(err)
+		}
+		// skip this block
+		if txCount > 0 {
+			initHeight = height
+			initTime = header.Time
+			break
+		}
+	}
+	lastHeight := initHeight
+	var avgTPS float64
+	var maxTps float64
+	var minTps float64 = 100000
 	for {
 		newblockNum := tpsman.GetBlockNum()
 		// No tx is executed
-		if tpsman.lastBlockNum == newblockNum {
+		if lastHeight == newblockNum {
 			time.Sleep(1 * time.Second)
 			continue
 		}
-		aveTimeInterval := time.Now().Sub(tpsman.aveStartTime)
-		insTimeInterval := time.Now().Sub(tpsman.insStartTime)
-		tpsman.insStartTime = time.Now()
 
-		aveBlockExec := newblockNum - tpsman.startBlockNum + 1
-		aveTPS := float64(aveBlockExec) / aveTimeInterval.Seconds()
+		for height := lastHeight + 1; height <= newblockNum; height++ {
+			txCount, timestamp := tpsman.transactionCountAndTimestamp(height)
+			totalTxCount += txCount
+			lastHeight = height
 
-		insBlockExec := newblockNum - tpsman.lastBlockNum + 1
-		tpsman.lastBlockNum = newblockNum
-		insTPS := float64(insBlockExec) / insTimeInterval.Seconds()
-		if tpsman.minTPS > insTPS {
-			tpsman.minTPS = insTPS
+			avgTPS = float64(totalTxCount) / float64(timestamp-initTime) / 1000
+			if avgTPS > maxTps {
+				maxTps = avgTPS
+			}
+			if avgTPS < minTps {
+				minTps = avgTPS
+			}
+			fmt.Println("========================================================")
+			fmt.Printf("[TPS log] StartBlock Num: %d, NewBlockNum: %d\n", initHeight+1, height)
+			fmt.Printf("[Summary] Average BTPS: %5.2f, Max TPS: %5.2f, Min TPS: %5.2f, Time Last: %ds\n", avgTPS, maxTps, minTps, (timestamp-initTime)/1000)
+			fmt.Println("========================================================")
 		}
-		if tpsman.maxTPS < insTPS {
-			tpsman.maxTPS = insTPS
-		}
-		fmt.Println("========================================================")
-		fmt.Printf("[TPS log] StartBlock Num: %d, LastBlockNum: %d, NewBlockNum: %d\n", tpsman.startBlockNum, tpsman.lastBlockNum, newblockNum)
-		fmt.Printf("[TPS log] Average BTPS: %5.2f, Time Last: %dms, Total BlockExec: %d\n", aveTPS, aveTimeInterval.Milliseconds(), aveBlockExec)
-		fmt.Printf("[TPS log] Instant TPS %5.2f, Time Interval: %dms, BlockExec: %d\n", insTPS, insTimeInterval.Milliseconds(), insBlockExec)
-		fmt.Printf("[Summary] Average BTPS: %5.2f, Max TPS: %5.2f, Min TPS: %5.2f, Time Last: %dms\n", aveTPS, tpsman.maxTPS, tpsman.minTPS, aveTimeInterval.Milliseconds())
-		fmt.Println("========================================================")
 
-		time.Sleep(2 * time.Second)
+		time.Sleep(5 * time.Second)
 	}
 }
