@@ -22,15 +22,16 @@ type EthClient struct {
 // 创建优化的HTTP客户端，用于连接池
 func createOptimizedHTTPClient() *http.Client {
 	transport := &http.Transport{
-		MaxIdleConns:        100,              // 最大空闲连接数
-		MaxIdleConnsPerHost: 20,               // 每个主机的最大空闲连接数
-		IdleConnTimeout:     90 * time.Second, // 空闲连接超时
-		DisableKeepAlives:   false,            // 启用keep-alive
+		MaxIdleConns:        300,              // 增加最大空闲连接数
+		MaxIdleConnsPerHost: 300,              // 增加每个主机的最大空闲连接数
+		IdleConnTimeout:     30 * time.Second, // 延长空闲连接超时
+		DisableKeepAlives:   false,            // ✅ 启用keep-alive（关键优化）
+		MaxConnsPerHost:     300,              // 限制每个主机的最大连接数
 	}
 
 	return &http.Client{
 		Transport: transport,
-		Timeout:   30 * time.Second, // 请求超时
+		Timeout:   10 * time.Second, // 请求超时
 	}
 }
 
