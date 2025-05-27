@@ -1,9 +1,9 @@
 {
   "rpc": [
-    "https://testrpc.x1.tech"
+    "http://127.0.0.1:8123"
   ],
-  "accountsFilePath": "./config/poly_test/addr_1_wmt",
-  "concurrency": 1,
-  "threshold": 180,
+  "accountsFilePath": "./config/devnet/addr_20000_wmt",
+  "concurrency": 300,
+  "threshold": 5000,
   "gasPrice": 9
 }
