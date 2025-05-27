@@ -1,13 +1,17 @@
 package utils
 
 import (
+	"bytes"
 	"context"
 	"crypto/ecdsa"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"math"
 	"math/big"
+	"net/http"
 	"strconv"
 	"strings"
 	"sync"
@@ -219,22 +223,15 @@ func RunTxs(p BasepParam, e func(ethcmm.Address) []TxParam) {
 	clients := client.GenerateClients(config.TransferCfg.Rpc)    // generate CosmosClient or EthClient
 	accounts := generateAccounts(config.TransferCfg.PrivateKeys) // generate accounts
 	mempoolSizeMap := &sync.Map{}
-	mempoolSizeMap.Store(0, int(0))
+	mempoolSizeMap.Store(0, 0)
 
-	// ethClient for mempool query
-	cli, err := ethclient.Dial(config.TransferCfg.Rpc[0])
-
-	if err != nil {
-		panic(fmt.Errorf("failed to initialize client: %+v", err))
-	}
-
-	go func(client *ethclient.Client) {
+	go func() {
 		for {
-			size := getMempoolSize(client)
+			size := getMempoolSizeV2(config.TransferCfg.Rpc[0])
 			mempoolSizeMap.Store(0, size)
 			time.Sleep(time.Second)
 		}
-	}(cli)
+	}()
 
 	tpsman := NewTPSMan(config.TransferCfg.Rpc[0])
 
@@ -246,12 +243,10 @@ func RunTxs(p BasepParam, e func(ethcmm.Address) []TxParam) {
 				mempoolSize, ok := mempoolSizeMap.Load(0)
 				//fmt.Printf("Mempool size: %d\n", mempoolSize)
 				if ok && mempoolSize.(int) >= config.TransferCfg.Threshold {
-					fmt.Println("达到阈值")
-					time.Sleep(time.Millisecond * 500)
+					fmt.Println("达到阈值:", mempoolSize.(int))
+					time.Sleep(time.Second)
 					continue
 				}
-
-				fmt.Println("mempoolSize:", mempoolSize.(int), "threshold:", config.TransferCfg.Threshold)
 
 				start := gIndex * count
 				end := start + count
@@ -316,6 +311,101 @@ func getGasPrice(client *ethclient.Client) *big.Int {
 }
 
 var defaultGasPrice = big.NewInt(1)
+
+// 全局HTTP客户端，用于复用连接
+var httpClient = &http.Client{
+	Timeout: 10 * time.Second,
+	Transport: &http.Transport{
+		MaxIdleConns:          300,              // 增加全局最大空闲连接数
+		MaxIdleConnsPerHost:   300,              // 增加每个主机的最大空闲连接数
+		MaxConnsPerHost:       300,              // 限制每个主机的最大连接数
+		IdleConnTimeout:       90 * time.Second, // 空闲连接超时时间
+		TLSHandshakeTimeout:   10 * time.Second, // TLS握手超时
+		ExpectContinueTimeout: 1 * time.Second,  // Expect: 100-continue超时
+		DisableKeepAlives:     false,            // 启用Keep-Alive（默认就是false，明确设置）
+		DisableCompression:    false,            // 启用压缩
+		ForceAttemptHTTP2:     false,            // 对于RPC调用，HTTP/1.1就够了
+	},
+}
+
+type TxPoolStatus struct {
+	BaseFee string `json:"baseFee"`
+	Pending string `json:"pending"`
+	Queued  string `json:"queued"`
+}
+
+type TxPoolResponse struct {
+	JsonRPC string       `json:"jsonrpc"`
+	ID      int          `json:"id"`
+	Result  TxPoolStatus `json:"result"`
+}
+
+// 新的getMempoolSize方法，使用txpool_status接口
+func getMempoolSizeV2(rpcURL string) int {
+	// 构造JSON-RPC请求
+	requestBody := map[string]interface{}{
+		"jsonrpc": "2.0",
+		"method":  "txpool_status",
+		"params":  []interface{}{},
+		"id":      1,
+	}
+
+	jsonData, err := json.Marshal(requestBody)
+	if err != nil {
+		log.Printf("Failed to marshal request: %v\n", err)
+		return 0
+	}
+
+	// 使用复用的HTTP客户端发送请求
+	resp, err := httpClient.Post(rpcURL, "application/json", bytes.NewBuffer(jsonData))
+	if err != nil {
+		log.Printf("Failed to send request: %v\n", err)
+		return 0
+	}
+	defer resp.Body.Close()
+
+	// 读取响应
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("Failed to read response: %v\n", err)
+		return 0
+	}
+
+	// 解析响应
+	var response TxPoolResponse
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		log.Printf("Failed to unmarshal response: %v\n", err)
+		return 0
+	}
+
+	// 解析十六进制字符串并计算总数
+	baseFee := hexToInt(response.Result.BaseFee)
+	pending := hexToInt(response.Result.Pending)
+	queued := hexToInt(response.Result.Queued)
+
+	return baseFee + pending + queued
+}
+
+func hexToInt(hexStr string) int {
+	if hexStr == "" || hexStr == "0x" {
+		return 0
+	}
+
+	// 去掉0x前缀
+	if strings.HasPrefix(hexStr, "0x") {
+		hexStr = hexStr[2:]
+	}
+
+	// 解析十六进制
+	val, err := strconv.ParseInt(hexStr, 16, 64)
+	if err != nil {
+		log.Printf("Failed to parse hex string %s: %v\n", hexStr, err)
+		return 0
+	}
+
+	return int(val)
+}
 
 // 批量执行多个账户的交易
 func executeBatch(gIndex int, cli client.Client, accounts []*EthAccount, e func(ethcmm.Address) []TxParam) {
