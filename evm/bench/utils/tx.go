@@ -423,7 +423,9 @@ func sendSimpleBatch(gIndex int, ethClient *client.EthClient, txTemplate TxParam
 		}
 	}
 
-	log.Printf("[g%d] batch sent %d/%d transactions successfully\n", gIndex, successCount, len(signedTxs))
+	if successCount != len(signedTxs) {
+		log.Printf("[g%d] batch sent %d/%d transactions successfully\n", gIndex, successCount, len(signedTxs))
+	}
 }
 
 func execute(gIndex int, cli client.Client, acc *EthAccount, e func(ethcmm.Address) []TxParam) {
