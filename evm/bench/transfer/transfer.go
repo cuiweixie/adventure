@@ -22,12 +22,12 @@ var (
 	fixed      bool
 	configPath string
 	//configurable gasPrice
-	gasPrice = new(big.Int).SetUint64(10000000000)
+	gasPrice = new(big.Int).SetUint64(1)
 )
 
 func transfer(cmd *cobra.Command, args []string) {
 	// amount := sdk.MustNewDecFromStr("0.000001").Int
-	amount := utils.ParseGasPriceToBigInt(0.000001, 18)
+	amount := new(big.Int).SetUint64(1)
 
 	fixedAddr := ethcmm.BytesToAddress(crypto.Keccak256(rand.Bytes(64)))
 
