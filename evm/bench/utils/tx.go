@@ -443,7 +443,7 @@ func executeBatch(gIndex int, cli client.Client, accounts []*EthAccount, e func(
 
 		sendSimpleBatch(gIndex, ethClient, txTemplate, accounts[startAccountIndex:endAccountIndex])
 
-		time.Sleep(time.Millisecond * 100)
+		time.Sleep(time.Millisecond * 200)
 	}
 }
 
@@ -499,6 +499,11 @@ func sendSimpleBatch(gIndex int, ethClient *client.EthClient, txTemplate TxParam
 	txHashes, err := ethClient.SendMultipleEthereumTx(signedTxs)
 	if err != nil {
 		log.Printf("[g%d] batch send failed: %v\n", gIndex, err)
+		if strings.Contains(err.Error(), "Transaction already exists") {
+			noncePlus1(accounts)
+		} else if strings.Contains(err.Error(), "nonce too low") {
+			queryNonce(ethClient, accounts)
+		}
 		return
 	}
 
@@ -514,6 +519,19 @@ func sendSimpleBatch(gIndex int, ethClient *client.EthClient, txTemplate TxParam
 
 	if successCount != len(signedTxs) {
 		log.Printf("[g%d] batch sent %d/%d transactions successfully\n", gIndex, successCount, len(signedTxs))
+	}
+}
+
+func noncePlus1(accounts []*EthAccount) {
+	for _, acc := range accounts {
+		acc.AddNonce()
+	}
+}
+
+func queryNonce(ethClient *client.EthClient, accounts []*EthAccount) {
+	for _, acc := range accounts {
+		acc.queried = false
+		acc.SetNonce(ethClient)
 	}
 }
 
