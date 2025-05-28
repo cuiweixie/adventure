@@ -441,13 +441,9 @@ func executeBatch(gIndex int, cli client.Client, accounts []*EthAccount, e func(
 			endAccountIndex = len(accounts)
 		}
 
-		// 发送这一批
 		sendSimpleBatch(gIndex, ethClient, txTemplate, accounts[startAccountIndex:endAccountIndex])
 
-		// 批次间休息
-		if end < totalTxs {
-			time.Sleep(time.Millisecond * 5)
-		}
+		time.Sleep(time.Millisecond * 100)
 	}
 }
 
