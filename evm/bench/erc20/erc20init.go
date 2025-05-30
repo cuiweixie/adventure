@@ -172,7 +172,7 @@ func deployERC20(cli client.Client, privateKey *ecdsa.PrivateKey, nonce uint64) 
 		gasPrice = getGasPrice(ethClient.Client)
 	}
 
-	txhash, err := cli.CreateContract(privateKey, nonce, nil, 1000000, gasPrice, ethcmn.Hex2Bytes(ERC20Hex))
+	txhash, err := cli.CreateContract(privateKey, nonce, nil, 10000000, gasPrice, ethcmn.Hex2Bytes(ERC20Hex))
 	if err != nil {
 		return ethcmn.Address{}, err
 	}
