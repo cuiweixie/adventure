@@ -185,7 +185,7 @@ func transfers(cli client.Client, privateKey *ecdsa.PrivateKey, nonce uint64, to
 	return nil
 }
 
-var defaultGasPrice = big.NewInt(1)
+var defaultGasPrice = big.NewInt(10000000000)
 
 func getGasPrice(client *ethclient.Client) *big.Int {
 	return defaultGasPrice

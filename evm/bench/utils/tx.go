@@ -226,8 +226,12 @@ func RunTxs(p BasepParam, e func(ethcmm.Address) []TxParam) {
 	mempoolSizeMap.Store(0, 0)
 
 	go func() {
+		cli, err := ethclient.Dial(config.TransferCfg.Rpc[0])
+		if err != nil {
+			panic(err)
+		}
 		for {
-			size := getMempoolSizeV2(config.TransferCfg.Rpc[0])
+			size := getMempoolSize(cli)
 			mempoolSizeMap.Store(0, size)
 			time.Sleep(time.Second)
 		}
@@ -310,7 +314,7 @@ func getGasPrice(client *ethclient.Client) *big.Int {
 	return gp
 }
 
-var defaultGasPrice = big.NewInt(1)
+var defaultGasPrice = big.NewInt(10000000000)
 
 // 全局HTTP客户端，用于复用连接
 var httpClient = &http.Client{

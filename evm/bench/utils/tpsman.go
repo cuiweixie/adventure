@@ -82,7 +82,7 @@ func (tpsman *SimpleTPSManager) transactionCountAndTimestamp(height uint64) (uin
 
 	var txCount uint
 	for {
-		txCount, err = tpsman.TransactionCount(context.Background(), header.Hash())
+		txCount, err = tpsman.TransactionCount(context.Background(), header.ParentHash)
 		if err != nil {
 			time.Sleep(time.Millisecond * 200)
 		} else {
@@ -92,7 +92,7 @@ func (tpsman *SimpleTPSManager) transactionCountAndTimestamp(height uint64) (uin
 }
 
 func (tpsman *SimpleTPSManager) TPSDisplay() {
-	time.Sleep(time.Second * 10)
+	time.Sleep(time.Second * 5)
 	fmt.Println("TPSDisplay")
 	var initHeight uint64
 	var totalTxCount uint64
@@ -103,7 +103,7 @@ func (tpsman *SimpleTPSManager) TPSDisplay() {
 		if err != nil {
 			panic(err)
 		}
-		txCount, err := tpsman.TransactionCount(context.Background(), header.Hash())
+		txCount, err := tpsman.TransactionCount(context.Background(), header.ParentHash)
 		if err != nil {
 			panic(err)
 		}
@@ -112,8 +112,12 @@ func (tpsman *SimpleTPSManager) TPSDisplay() {
 			initHeight = height
 			initTime = header.Time
 			break
+		} else {
+			fmt.Println("height", height, "hash", header.ParentHash, "txcount", txCount)
+			time.Sleep(time.Millisecond * 200)
 		}
 	}
+	fmt.Println("initHeight", initHeight)
 	lastHeight := initHeight
 	var avgTPS float64
 	var maxTps float64
