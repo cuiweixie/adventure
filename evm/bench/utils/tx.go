@@ -226,12 +226,8 @@ func RunTxs(p BasepParam, e func(ethcmm.Address) []TxParam) {
 	mempoolSizeMap.Store(0, 0)
 
 	go func() {
-		cli, err := ethclient.Dial(config.TransferCfg.Rpc[0])
-		if err != nil {
-			panic(err)
-		}
 		for {
-			size := getMempoolSize(cli)
+			size := getMempoolSizeV2(config.TransferCfg.Rpc[0])
 			mempoolSizeMap.Store(0, size)
 			time.Sleep(time.Second)
 		}
@@ -262,8 +258,6 @@ func RunTxs(p BasepParam, e func(ethcmm.Address) []TxParam) {
 				// 使用批量执行
 				cli := clients[gIndex%len(clients)]
 				executeBatch(gIndex, cli, batchAccounts, e)
-				time.Sleep(time.Millisecond * 10) // 批量发送后稍微休息长一点
-
 			}
 		}(i)
 	}
