@@ -92,7 +92,7 @@ func (tpsman *SimpleTPSManager) transactionCountAndTimestamp(height uint64) (uin
 }
 
 func (tpsman *SimpleTPSManager) TPSDisplay() {
-	time.Sleep(time.Second * 5)
+	time.Sleep(time.Second * 10)
 	fmt.Println("TPSDisplay")
 	var initHeight uint64
 	var totalTxCount uint64

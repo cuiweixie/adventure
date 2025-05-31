@@ -1,1 +1,4 @@
 .idea/
+a.log
+temp_output.txt
+.env
