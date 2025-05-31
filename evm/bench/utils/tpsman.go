@@ -113,8 +113,8 @@ func (tpsman *SimpleTPSManager) TPSDisplay() {
 			initTime = header.Time
 			break
 		} else {
-			fmt.Println("height", height, "hash", header.ParentHash, "txcount", txCount)
-			time.Sleep(time.Millisecond * 200)
+			fmt.Println("height", height, "parent hash", header.ParentHash, "txcount", txCount)
+			time.Sleep(time.Second)
 		}
 	}
 	fmt.Println("initHeight", initHeight)
