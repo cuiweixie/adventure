@@ -40,7 +40,7 @@ func erc20(cmd *cobra.Command, args []string) {
 	eParam = utils.NewTxParam(
 		ethcmm.HexToAddress(contract),
 		nil,
-		uint64(3000000),
+		uint64(100000),
 		gasPrice,
 		generateTxData(),
 	)

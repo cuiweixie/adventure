@@ -3,7 +3,7 @@
     "http://127.0.0.1:8545"
   ],
   "accountsFilePath": "./config/devnet/addr_20000_wmt",
-  "concurrency": 20,
-  "threshold": 30000,
+  "concurrency": 50,
+  "threshold": 100000,
   "gasPrice": 9
 }
