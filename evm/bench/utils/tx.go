@@ -440,7 +440,7 @@ func executeBatch(gIndex int, cli client.Client, accounts []*EthAccount, e func(
 
 		sendSimpleBatch(gIndex, ethClient, txTemplate, accounts[startAccountIndex:endAccountIndex])
 
-		time.Sleep(time.Millisecond * 200)
+		time.Sleep(time.Millisecond * 50)
 	}
 }
 
