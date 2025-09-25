@@ -45,7 +45,7 @@ func createRequest(method string, params interface{}) Request {
 func call(postBody []byte, reqType int, ip string) (rpcRes *Response, err error) {
 	client := &http.Client{}
 
-	//post请求
+	//post request
 	req, err := http.NewRequest("POST", ip, bytes.NewBuffer(postBody))
 	if err != nil {
 		return nil, err

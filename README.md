@@ -1,70 +1,70 @@
 # Adventure
 
-## 1. 编译
+## 1. Compilation
 ```shell
 make
 ```
 
-## 2. 操作
-### 2.1 初始化账户
+## 2. Operations
+### 2.1 Account Initialization
 ```shell
 adventure evm batch-transfer 10 -i ${ip} -s ${private_key} -a ${address_file}
 ```
-* -i: ip地址
-  * 必填
-  * 支持cosmos端口、eth端口
-* -s: 私钥 (不是助记词)
-  * 必填
-  * 对应地址，拥有足够的okt
-* -a: 账户地址文件路径
-  * 选填，如果为空，代码默认内置2000个固定账户
-  * 目前已经支持直接使用私钥文件，也支持0x地址格式
+* -i: IP address
+  * Required
+  * Supports cosmos port and eth port
+* -s: Private key (not mnemonic)
+  * Required
+  * Corresponding address should have sufficient OKT
+* -a: Account address file path
+  * Optional, if empty, code defaults to 2000 built-in fixed accounts
+  * Currently supports direct use of private key files and 0x address format
 
-### 2.2 压力测试
-公共参数
-* --ips, -i: ip地址列表
-  * 必填
-  * 支持cosmos、eth两者的域名或ip地址
-* --concurrency, -c: 启动的协程数量
-  * 选填, 默认1
-* --sleep, -t: 单协程的每轮睡眠时间，毫秒
-  * 选填, 默认1000ms
-* --private-key-file, -p: 账户私钥文件路径
-  * 选填, 如果为空，代码默认内置2000个固定账户
-  * 私钥 (不是助记词)
+### 2.2 Load Testing
+Common Parameters
+* --ips, -i: IP address list
+  * Required
+  * Supports cosmos and eth domain names or IP addresses
+* --concurrency, -c: Number of goroutines to start
+  * Optional, default is 1
+* --sleep, -t: Sleep time per round for single goroutine, in milliseconds
+  * Optional, default is 1000ms
+* --private-key-file, -p: Account private key file path
+  * Optional, if empty, code defaults to 2000 built-in fixed accounts
+  * Private key (not mnemonic)
 
-#### 2.2.1 转账
+#### 2.2.1 Transfer
 ```shell
 adventure evm bench transfer -i ${ip1},${ip2},${ip3} -c 100 -p ${private_key_file}
 ```
 
-* --fixed, -f: 转账to地址是否固定一个
-  * 选填
-  * false, 默认, 每个账户转到对应的一个固定地址
-  * true, 所有交易均转到同一个地址
+* --fixed, -f: Whether to fix the transfer destination address
+  * Optional
+  * false, default, each account transfers to a corresponding fixed address
+  * true, all transactions transfer to the same address
 
-#### 2.2.2 压力测试合约
+#### 2.2.2 Contract Load Testing
 ```shell
-adventure evm bench operate -i ${ip1},${ip2},${ip3} -c 100 --opts 1,1,1,1,1 --times 1 --contract 0x6cc0277c979325800294774d7ae478A96B824271 --id 0 
+adventure evm bench operate -i ${ip1},${ip2},${ip3} -c 100 --opts 1,1,1,1,1 --times 1 --contract 0x6cc0277c979325800294774d7ae478A96B824271 --id 0
 ```
 
-* --contract: router合约地址或测试合约地址
-* --direct: 默认false; 设置为true时，工具会直接往测试合约发tx，而不是router合约地址；--id就不需要设置，--contract直接设置为具体的合约地址
-* --id: 测试合约id
-* --opts: 每个操作码在单次循环的执行次数
-* --times: 循环次数
+* --contract: Router contract address or test contract address
+* --direct: Default false; when set to true, the tool will send transactions directly to the test contract instead of the router contract address; --id doesn't need to be set, --contract is set directly to the specific contract address
+* --id: Test contract ID
+* --opts: Number of executions for each opcode in a single loop
+* --times: Number of loops
 
-#### 2.2.3 测试网uniswap挖卖提
+#### 2.2.3 Testnet Uniswap Mining/Selling/Withdrawal
 ```shell
-adventure evm bench wmt -i ${ip1},${ip2},${ip3}  -c 250     
+adventure evm bench wmt -i ${ip1},${ip2},${ip3}  -c 250
 ```
 
-#### 2.2.4 测试网查询
+#### 2.2.4 Testnet Query
 ```shell
  adventure evm bench query -i https://exchaintestrpc.okex.org -t 1000 -o 1,1,1,1,1,1,1,1,1
 ```
 
-* -o: 每个查询接口在每秒创建的协程数量
+* -o: Number of goroutines created per second for each query interface
   * 0: eth_blockNumber
   * 1: eth_getBalance
   * 2: eth_getBlockByNumber
@@ -76,14 +76,14 @@ adventure evm bench wmt -i ${ip1},${ip2},${ip3}  -c 250
   * 8: eth_call
 
 
-## wasm 压测
-### 压测 cw20 转账
-#### 转手续费
-10个okt够用了
+## WASM Load Testing
+### CW20 Transfer Load Testing
+#### Transfer Gas Fees
+10 OKT is sufficient
 ```shell
 adventure evm batch-transfer 10 -i http://localhost:8545 -a config/devnet/address_10 -s 8ff3ca2d9985c3a52b459e2f6e7822b23e1af845961e22128d5f372fb9aa5f17
 ```
-在对应目录准备好配置文件，如下：
+Prepare the configuration file in the corresponding directory as follows:
 ```json
 {
   "restUrls": [
@@ -100,24 +100,24 @@ adventure evm batch-transfer 10 -i http://localhost:8545 -a config/devnet/addres
 }
 ```
 
-生成默认模板配置，将在控制台输入模板配置文件信息
+Generate default template configuration, template configuration file information will be input in the console
 ```shell
  adventure wasm bench cw20-config
 ```
 
-执行命令开启压测，如果合约地址位空，将自动部署合约
+Execute command to start load testing, if contract address is empty, contract will be automatically deployed
 ```shell
 adventure wasm bench cw20 --f config/devnet/cw20-local.json
 ```
 
-### 压测 OKT 原生代币转账
-#### 转手续费
-有多少个账户参与压测（配置文件里用到的账户文件） 就给每个账户转多少个okt
+### OKT Native Token Transfer Load Testing
+#### Transfer Gas Fees
+Transfer as many OKT to each account as there are accounts participating in load testing (account files used in configuration file)
 ```shell
 adventure evm batch-transfer 100000 -i http://localhost:8545 -a config/devnet/address_10 -s 8ff3ca2d9985c3a52b459e2f6e7822b23e1af845961e22128d5f372fb9aa5f17
 ```
 
-在对应目录准备好配置文件，如下：
+Prepare the configuration file in the corresponding directory as follows:
 ```json
 {
   "restUrls": [
@@ -134,21 +134,21 @@ adventure evm batch-transfer 100000 -i http://localhost:8545 -a config/devnet/ad
 }
 ```
 
-生成默认模板配置，将在控制台输入模板配置文件信息
+Generate default template configuration, template configuration file information will be input in the console
 ```shell
  adventure wasm bench okt-config
 ```
 
-执行命令开启压测，如果合约地址位空，将自动部署合约
+Execute command to start load testing, if contract address is empty, contract will be automatically deployed
 ```shell
 adventure wasm bench okt --f config/devnet/cwokt-local.json
 ```
 
-### 压测 EO RO WO
-#### 准备工作
-压测分为直接执行compute/read/writeTest和通过router合约执行compute/read/writeTest。压测合约在config/devnet/wasm_contract目录下，代码可以自动部署合约。
+### Load Testing EO RO WO
+#### Preparation
+Load testing is divided into directly executing compute/read/writeTest and executing compute/read/writeTest through router contracts. Load testing contracts are in the config/devnet/wasm_contract directory, and the code can automatically deploy contracts.
 
-准备好配置文件，如下：
+Prepare the configuration file as follows:
 ```json
 {
   "PrivateKeysFile": "./config/devnet/acc_pri_10",
@@ -167,31 +167,31 @@ adventure wasm bench okt --f config/devnet/cwokt-local.json
   "chainId": "exchain-67"
 }
 ```
-其中需要说明的输入项如下：
-* contractAddress,若合约已经部署，直接填写合约0x地址，否则设为空，此时会自动部署
-* contractPath：合约文件的路径
-* routerContractPath：router合约的路径
+The input items that need explanation are as follows:
+* contractAddress: If the contract is already deployed, directly fill in the contract 0x address, otherwise set to empty, and it will be automatically deployed
+* contractPath: Path to the contract file
+* routerContractPath: Path to the router contract
 
-cwoperate-config命令展示默认模板配置，将在控制台输入模板配置文件信息
+The cwoperate-config command displays the default template configuration, template configuration file information will be input in the console
 ```shell
  adventure wasm bench cwoperate-config
 ```
 
-示例测试文件的路径为：config/testnet/operate_test.json
+Example test file path: config/testnet/operate_test.json
 
-#### 账户初始化
-压测需要传入私钥，这些私钥需要在链上存在对应的账户和用于支付gas的okt，因此需要进行初始转账。
+#### Account Initialization
+Load testing requires private keys to be passed in. These private keys need to have corresponding accounts on the chain and OKT for paying gas, so initial transfers are required.
 
 ```shell
 adventure evm batch-transfer 100000 -i http://localhost:8545 -a ./config/devnet/acc_pri_10 -s 8ff3ca2d9985c3a52b459e2f6e7822b23e1af845961e22128d5f372fb9aa5f17
 ```
 
 
-执行命令开启压测，如果合约地址位空，将自动部署合约
+Execute command to start load testing, if contract address is empty, contract will be automatically deployed
 ```shell
 adventure wasm bench cwoperate --type read --opt 1,1,1,1 --times 1 --f ./config/testnet/operate_test.json
 ```
-其中
-* type字段输入具体执行的操作
-* opt字段输入调用具体操作合约所需要输入的opt
-* times字段输入执行次数
+Where:
+* type field: input the specific operation to execute
+* opt field: input the opt required to call the specific operation contract
+* times field: input the number of executions

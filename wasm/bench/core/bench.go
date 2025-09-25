@@ -25,7 +25,7 @@ func (b *BaseBench) StartBench() {
 				for index := gIndex * count; index < (gIndex+1)*count; index++ {
 					client := b.TendermintClients[gIndex%len(b.TendermintClients)]
 					if b.MempoolThreshold > 0 && client.Mempoolsize >= b.MempoolThreshold {
-						log.Println("mempool 达到阈值")
+						log.Println("mempool reached threshold")
 						time.Sleep(200 * time.Millisecond)
 						continue
 					}

@@ -138,11 +138,11 @@ func (tpsman *SimpleTPSManager) TPSDisplay() {
 }
 
 func (tpsman *SimpleTPSManager) transactionCountByHeight(height uint64) (uint64, error) {
-	// 构造 JSON-RPC 请求
+	// Construct JSON-RPC request
 	requestBody := map[string]interface{}{
 		"jsonrpc": "2.0",
 		"method":  "eth_getBlockByNumber",
-		"params":  []interface{}{fmt.Sprintf("0x%x", height), false}, // false 表示不返回完整交易详情
+		"params":  []interface{}{fmt.Sprintf("0x%x", height), false}, // false means don't return full transaction details
 		"id":      1,
 	}
 
@@ -151,23 +151,23 @@ func (tpsman *SimpleTPSManager) transactionCountByHeight(height uint64) (uint64,
 		return 0, fmt.Errorf("error marshaling JSON request: %v", err)
 	}
 
-	// 发送 HTTP 请求
+	// Send HTTP request
 	resp, err := http.Post(tpsman.url, "application/json", bytes.NewBuffer(jsonData))
 	if err != nil {
 		return 0, fmt.Errorf("error sending HTTP request: %v", err)
 	}
 	defer resp.Body.Close()
 
-	// 读取响应
+	// Read response
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return 0, fmt.Errorf("error reading response body: %v", err)
 	}
 
-	// 解析 JSON-RPC 响应
+	// Parse JSON-RPC response
 	var rpcResponse struct {
 		Result *struct {
-			Transactions []string `json:"transactions"` // 当 false 时，这里是交易哈希数组
+			Transactions []string `json:"transactions"` // When false, this is an array of transaction hashes
 		} `json:"result"`
 		Error *struct {
 			Code    int    `json:"code"`
@@ -179,16 +179,16 @@ func (tpsman *SimpleTPSManager) transactionCountByHeight(height uint64) (uint64,
 		return 0, fmt.Errorf("error unmarshaling JSON response: %v", err)
 	}
 
-	// 检查是否有错误
+	// Check for errors
 	if rpcResponse.Error != nil {
 		return 0, fmt.Errorf("JSON-RPC error: %s", rpcResponse.Error.Message)
 	}
 
-	// 检查结果是否为空
+	// Check if result is empty
 	if rpcResponse.Result == nil {
 		return 0, nil
 	}
 
-	// 返回交易数量
+	// Return transaction count
 	return uint64(len(rpcResponse.Result.Transactions)), nil
 }

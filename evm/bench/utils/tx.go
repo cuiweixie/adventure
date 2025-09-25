@@ -45,12 +45,12 @@ var (
 	chainId      = new(big.Int).SetUint64(65)
 	signer       = types.NewLondonSigner(chainId)
 
-	// chainId缓存 - 所有节点共享同一个chainId
+	// chainId cache - all nodes share the same chainId
 	cachedChainId *big.Int
 	chainIdOnce   sync.Once
 )
 
-// 获取缓存的chainId - 只查询一次
+// Get cached chainId - only query once
 func getCachedChainId(ethClient *client.EthClient) (*big.Int, error) {
 	var err error
 	chainIdOnce.Do(func() {
@@ -79,7 +79,7 @@ func hasDecimal(num float64) bool {
 
 /*
 *
-作用：用来计算并发携程一次发送完毕后的的成功率
+Purpose: Calculate success rate after concurrent goroutines finish sending once
 */
 func GetTxTpsAndSuccessRatio(lstTxHash []string, cocurrent int64) (ratio float32, tps int64) {
 	num := len(lstTxHash)
@@ -121,7 +121,7 @@ func getTxHashList(gIndex int, cli client.Client, acc *EthAccount, e func(ethcmm
 
 /*
 *
-功能：获取返回所有账户的rlpencode
+Function: Get rlpencode for all accounts
 */
 func getTxRlpEncodeList(cli client.Client, acc *EthAccount, e func(ethcmm.Address) []TxParam) {
 	caller := common.GetEthAddressFromPK(acc.GetPrivateKey())
@@ -143,7 +143,7 @@ func getTxRlpEncodeList(cli client.Client, acc *EthAccount, e func(ethcmm.Addres
 
 /*
 *
-功能：获取到单个交易的rlpencode
+Function: Get rlpencode for a single transaction
 */
 func GetEthTxRlpEncode(pk *ecdsa.PrivateKey, nonce uint64, to ethcmm.Address, amount *big.Int, gaslimit uint64, gasprice *big.Int, data []byte) (string, error) {
 	//make tx
@@ -154,7 +154,7 @@ func GetEthTxRlpEncode(pk *ecdsa.PrivateKey, nonce uint64, to ethcmm.Address, am
 	if err != nil {
 		log.Println(err)
 	}
-	//当需要调用 eth_sendRawTransaction 函数中的 params的时候，通过下面这个rlp来构造
+	//When calling eth_sendRawTransaction function params, construct through the rlp below
 	b, err := rlp.EncodeToBytes(signedTx)
 	params := "0x" + hex.EncodeToString(b)
 	log.Printf("%s\n", params)
@@ -187,7 +187,7 @@ func NewTxParam(to ethcmm.Address, amount *big.Int, gasLimit uint64, gasPrice *b
 }
 
 /**
-功能：获取同时并发的交易，收到tx时候花费的总时间，并统计成功率和tps
+Function: Get concurrent transactions, total time spent when receiving tx, and calculate success rate and tps
 */
 
 func RunTxRpc(p BasepParam, e func(ethcmm.Address) []TxParam) {
@@ -199,7 +199,7 @@ func RunTxRpc(p BasepParam, e func(ethcmm.Address) []TxParam) {
 	for i := 0; i < p.concurrency; i++ {
 		wg.Add(1)
 		go func(gIndex int) {
-			//j<1是为了获取一次交易
+			//j<1 is to get one transaction
 			for j := 0; j < 1; j++ {
 				aIndex := (gIndex + j*p.concurrency) % len(accounts) // make sure accounts will be picked in order by round-robin
 				acc := accounts[aIndex]
@@ -254,7 +254,7 @@ func RunTxs(p BasepParam, e func(ethcmm.Address) []TxParam) {
 				}
 				batchAccounts := accounts[start:end]
 
-				// 使用批量执行
+				// Use batch execution
 				cli := clients[gIndex%len(clients)]
 				executeBatch(gIndex, cli, batchAccounts, e)
 			}
@@ -309,19 +309,19 @@ func getGasPrice(client *ethclient.Client) *big.Int {
 
 var defaultGasPrice = big.NewInt(10000000000)
 
-// 全局HTTP客户端，用于复用连接
+// Global HTTP client for connection reuse
 var httpClient = &http.Client{
 	Timeout: 10 * time.Second,
 	Transport: &http.Transport{
-		MaxIdleConns:          300,              // 增加全局最大空闲连接数
-		MaxIdleConnsPerHost:   300,              // 增加每个主机的最大空闲连接数
-		MaxConnsPerHost:       300,              // 限制每个主机的最大连接数
-		IdleConnTimeout:       90 * time.Second, // 空闲连接超时时间
-		TLSHandshakeTimeout:   10 * time.Second, // TLS握手超时
-		ExpectContinueTimeout: 1 * time.Second,  // Expect: 100-continue超时
-		DisableKeepAlives:     false,            // 启用Keep-Alive（默认就是false，明确设置）
-		DisableCompression:    false,            // 启用压缩
-		ForceAttemptHTTP2:     false,            // 对于RPC调用，HTTP/1.1就够了
+		MaxIdleConns:          300,              // Increase global maximum idle connections
+		MaxIdleConnsPerHost:   300,              // Increase maximum idle connections per host
+		MaxConnsPerHost:       300,              // Limit maximum connections per host
+		IdleConnTimeout:       90 * time.Second, // Idle connection timeout
+		TLSHandshakeTimeout:   10 * time.Second, // TLS handshake timeout
+		ExpectContinueTimeout: 1 * time.Second,  // Expect: 100-continue timeout
+		DisableKeepAlives:     false,            // Enable Keep-Alive (default is false, set explicitly)
+		DisableCompression:    false,            // Enable compression
+		ForceAttemptHTTP2:     false,            // For RPC calls, HTTP/1.1 is sufficient
 	},
 }
 
@@ -337,9 +337,9 @@ type TxPoolResponse struct {
 	Result  TxPoolStatus `json:"result"`
 }
 
-// 新的getMempoolSize方法，使用txpool_status接口
+// New getMempoolSize method using txpool_status interface
 func getMempoolSizeV2(rpcURL string) int {
-	// 构造JSON-RPC请求
+	// Construct JSON-RPC request
 	requestBody := map[string]interface{}{
 		"jsonrpc": "2.0",
 		"method":  "txpool_status",
@@ -353,7 +353,7 @@ func getMempoolSizeV2(rpcURL string) int {
 		return 0
 	}
 
-	// 使用复用的HTTP客户端发送请求
+	// Send request using reused HTTP client
 	resp, err := httpClient.Post(rpcURL, "application/json", bytes.NewBuffer(jsonData))
 	if err != nil {
 		log.Printf("Failed to send request: %v\n", err)
@@ -361,14 +361,14 @@ func getMempoolSizeV2(rpcURL string) int {
 	}
 	defer resp.Body.Close()
 
-	// 读取响应
+	// Read response
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Printf("Failed to read response: %v\n", err)
 		return 0
 	}
 
-	// 解析响应
+	// Parse response
 	var response TxPoolResponse
 	err = json.Unmarshal(body, &response)
 	if err != nil {
@@ -376,7 +376,7 @@ func getMempoolSizeV2(rpcURL string) int {
 		return 0
 	}
 
-	// 解析十六进制字符串并计算总数
+	// Parse hexadecimal strings and calculate total
 	baseFee := hexToInt(response.Result.BaseFee)
 	pending := hexToInt(response.Result.Pending)
 	queued := hexToInt(response.Result.Queued)
@@ -389,12 +389,12 @@ func hexToInt(hexStr string) int {
 		return 0
 	}
 
-	// 去掉0x前缀
+	// Remove 0x prefix
 	if strings.HasPrefix(hexStr, "0x") {
 		hexStr = hexStr[2:]
 	}
 
-	// 解析十六进制
+	// Parse hexadecimal
 	val, err := strconv.ParseInt(hexStr, 16, 64)
 	if err != nil {
 		log.Printf("Failed to parse hex string %s: %v\n", hexStr, err)
@@ -404,28 +404,28 @@ func hexToInt(hexStr string) int {
 	return int(val)
 }
 
-// 批量执行多个账户的交易
+// Batch execute transactions for multiple accounts
 func executeBatch(gIndex int, cli client.Client, accounts []*EthAccount, e func(ethcmm.Address) []TxParam) {
 	const maxBatchSize = 100
 
-	// 检查是否支持批量发送
+	// Check if batch sending is supported
 	ethClient, ok := cli.(*client.EthClient)
 	if !ok {
 		panic("eth client is not a eth client")
 	}
 
-	// 获取交易参数模板（只用第一个账户的第一个交易作为模板）
+	// Get transaction parameter template (use only the first transaction of the first account as template)
 	if len(accounts) == 0 {
 		return
 	}
 
 	eParams := e(accounts[0].caller)
-	txTemplate := eParams[0] // 永远只有1个，所有交易都用相同的参数
+	txTemplate := eParams[0] // Always only 1, all transactions use the same parameters
 
-	// 计算总交易数
+	// Calculate total number of transactions
 	totalTxs := len(accounts)
 
-	// 分批发送，每批最多100笔
+	// Send in batches, maximum 100 transactions per batch
 	for i := 0; i < totalTxs; i += maxBatchSize {
 		end := i + maxBatchSize
 		if end > totalTxs {
@@ -449,7 +449,7 @@ func sendSimpleBatch(gIndex int, ethClient *client.EthClient, txTemplate TxParam
 		return
 	}
 
-	// 构造并签名所有交易
+	// Construct and sign all transactions
 	var signedTxs []*types.Transaction
 	chainId, err := getCachedChainId(ethClient)
 	if err != nil {
@@ -466,7 +466,7 @@ func sendSimpleBatch(gIndex int, ethClient *client.EthClient, txTemplate TxParam
 			continue
 		}
 
-		// 创建交易
+		// Create transaction
 		unsignedTx := types.NewTransaction(
 			acc.GetNonce(),
 			txTemplate.to,
@@ -476,7 +476,7 @@ func sendSimpleBatch(gIndex int, ethClient *client.EthClient, txTemplate TxParam
 			txTemplate.data,
 		)
 
-		// 签名交易
+		// Sign transaction
 		signedTx, err := types.SignTx(unsignedTx, signer, acc.GetPrivateKey())
 		if err != nil {
 			log.Printf("[g%d] failed to sign tx: %v\n", gIndex, err)
@@ -492,7 +492,7 @@ func sendSimpleBatch(gIndex int, ethClient *client.EthClient, txTemplate TxParam
 		return
 	}
 
-	// 使用批量发送接口
+	// Use batch sending interface
 	txHashes, err := ethClient.SendMultipleEthereumTx(signedTxs)
 	if err != nil {
 		log.Printf("[g%d] batch send failed: %v\n", gIndex, err)
@@ -504,11 +504,11 @@ func sendSimpleBatch(gIndex int, ethClient *client.EthClient, txTemplate TxParam
 		return
 	}
 
-	// 统计成功的交易并更新nonce
+	// Count successful transactions and update nonce
 	successCount := 0
 	for i, txHash := range txHashes {
 		if txHash != (ethcmn.Hash{}) {
-			// 发送成功，更新对应账户的nonce
+			// Successful send, update corresponding account's nonce
 			accounts[i].AddNonce()
 			successCount++
 		}
@@ -548,7 +548,7 @@ func execute(gIndex int, cli client.Client, acc *EthAccount, e func(ethcmm.Addre
 		return
 	}
 
-	// 单个发送
+	// Single send
 	for _, eParam := range eParams {
 		_, err := cli.SendEthereumTx(acc.GetPrivateKey(), acc.GetNonce(), eParam.to, eParam.amount, eParam.gasLimit, defaultGasPrice, eParam.data)
 		if err == nil {
@@ -595,7 +595,7 @@ func RunTxsForPoly(e func(ethcmm.Address) []TxParam) {
 
 					mempoolSize, ok := mempoolSizeMap.Load(0)
 					if ok && mempoolSize.(int) >= config.Bridgecfg.Threshold {
-						fmt.Println("达到阈值")
+						fmt.Println("Threshold reached")
 						continue
 					}
 					execute(gIndex, cli, acc, e)

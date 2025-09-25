@@ -141,7 +141,7 @@ func (c *CosmosClient) CreateContract(privatekey *ecdsa.PrivateKey, nonce uint64
 	return ethcmn.HexToHash(res.TxHash), nil
 }
 
-// 批量发送已签名的交易 - CosmosClient暂不支持，返回空实现
+// Batch send signed transactions - CosmosClient does not support this yet, returns empty implementation
 func (c *CosmosClient) SendMultipleEthereumTx(signedTxs []*ethtypes.Transaction) ([]ethcmn.Hash, error) {
 	return nil, fmt.Errorf("multiple transaction not supported for CosmosClient")
 }

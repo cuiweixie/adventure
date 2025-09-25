@@ -1,6 +1,6 @@
-# 说明
-- mnemonics_10000.txt 1万个助剂词
-- hex_addr_10000.txt 1万个0x地址
-- bech32_addr_10000.txt 1万个bech32 地址
-- addr_50000 transfer用的5w个账户
-- addr_25000_1 、 addr_25000_2 是将addr_50000 拆分成两部分
+# Description
+- mnemonics_10000.txt: 10,000 mnemonic phrases
+- hex_addr_10000.txt: 10,000 0x addresses
+- bech32_addr_10000.txt: 10,000 bech32 addresses
+- addr_50000: 50,000 accounts used for transfers
+- addr_25000_1, addr_25000_2: Split addr_50000 into two parts

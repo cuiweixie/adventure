@@ -15,45 +15,48 @@ import (
 )
 
 type Config struct {
-	URL 		string
+	URL         string
 	AccountList string
-	Account 	string
+	Account     string
 }
 
-/**
-该文件提供些基础的util 函数
- */
-func PanicErr(err error){
+/*
+*
+This file provides some basic util functions
+*/
+func PanicErr(err error) {
 	PanicErr(err)
 }
 
-/**
-读取文件中的每一行，放到[]string中
- */
-func ReadDataFromFile(path string)(lines []string){
+/*
+*
+Read each line in the file and put it into []string
+*/
+func ReadDataFromFile(path string) (lines []string) {
 	f, err := os.Open(path)
 	PanicErr(err)
 	rd := bufio.NewReader(f)
 	lines = make([]string, 0)
 	num := 0
-	for true{
+	for true {
 		line, err := rd.ReadString('\n')
-		if err != nil || err == io.EOF{
+		if err != nil || err == io.EOF {
 			break
 		}
-		lines = append(lines,strings.TrimSpace(line))
+		lines = append(lines, strings.TrimSpace(line))
 		num++
 	}
 	log.Printf("Read lines %d from file", num)
 	return
 }
 
-/**
-读取json配置映射到struct中
- */
-func ReadJson2Struct(filepath string, obj interface{}){
+/*
+*
+Read json configuration and map to struct
+*/
+func ReadJson2Struct(filepath string, obj interface{}) {
 	file, ferr := os.Stat(filepath)
-	if ferr != nil{
+	if ferr != nil {
 		log.Printf("file path does not exist, %s", filepath)
 	}
 	log.Printf("%v", file)
@@ -64,7 +67,6 @@ func ReadJson2Struct(filepath string, obj interface{}){
 		log.Printf("error is: %s", err1)
 	}
 }
-
 
 const (
 	success = "success"
@@ -85,16 +87,15 @@ func DoPost(url string, postBody []byte) (*http.Response, error) {
 	elapsed := time.Since(startTime)
 
 	if respErr != nil {
-		log.Println(postBody, strconv.FormatInt(elapsed.Milliseconds(),10) + "ms", fail, respErr)
+		log.Println(postBody, strconv.FormatInt(elapsed.Milliseconds(), 10)+"ms", fail, respErr)
 		return nil, respErr
 	}
 
-	log.Println(postBody, strconv.FormatInt(elapsed.Milliseconds(),10) + "ms", success)
+	log.Println(postBody, strconv.FormatInt(elapsed.Milliseconds(), 10)+"ms", success)
 	defer resp.Body.Close()
 	return resp, nil
 }
 
-func DoGet(url string, body []byte){
+func DoGet(url string, body []byte) {
 
 }
-

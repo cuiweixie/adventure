@@ -1,6 +1,6 @@
-Wmt 交易消耗gas情况
+WMT Transaction Gas Consumption
 
-| 交易类型   | gas消耗  | testnet例子   |
+| Transaction Type   | Gas Consumption  | Testnet Example   |
 |-----|-----|-----|
 | approve   | 29034   | https://www.oklink.com/zh-cn/okc-test/tx/0xB65BB353EB274992D1DD7F980B5817606E7AB41F42DBEC63A651154FBA8FAB0B   |
 | addLiquidity   | 139312   | https://www.oklink.com/zh-cn/okc-test/tx/0xDE5AC0DD4A7985D390C49BB63BBF064DC4DF184ECF856F2686345A4B01FD7CC6   |

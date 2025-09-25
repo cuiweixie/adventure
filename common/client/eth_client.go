@@ -20,31 +20,31 @@ type EthClient struct {
 	signer    types.Signer
 }
 
-// 创建优化的HTTP客户端，用于连接池
+// Create optimized HTTP client for connection pooling
 func createOptimizedHTTPClient() *http.Client {
 	transport := &http.Transport{
-		MaxIdleConns:        300,              // 增加最大空闲连接数
-		MaxIdleConnsPerHost: 300,              // 增加每个主机的最大空闲连接数
-		IdleConnTimeout:     30 * time.Second, // 延长空闲连接超时
-		DisableKeepAlives:   false,            // ✅ 启用keep-alive（关键优化）
-		MaxConnsPerHost:     300,              // 限制每个主机的最大连接数
+		MaxIdleConns:        300,              // Increase maximum idle connections
+		MaxIdleConnsPerHost: 300,              // Increase maximum idle connections per host
+		IdleConnTimeout:     30 * time.Second, // Extend idle connection timeout
+		DisableKeepAlives:   false,            // ✅ Enable keep-alive (key optimization)
+		MaxConnsPerHost:     300,              // Limit maximum connections per host
 	}
 
 	return &http.Client{
 		Transport: transport,
-		Timeout:   10 * time.Second, // 请求超时
+		Timeout:   10 * time.Second, // Request timeout
 	}
 }
 
 func NewEthClient(ip string) (*EthClient, error) {
-	// 使用优化的HTTP客户端创建RPC客户端
+	// Create RPC client using optimized HTTP client
 	httpClient := createOptimizedHTTPClient()
 	rpcClient, err := rpc.DialHTTPWithClient(ip, httpClient)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize rpc client: %+v", err)
 	}
 
-	// 基于RPC客户端创建以太坊客户端
+	// Create Ethereum client based on RPC client
 	cli := ethclient.NewClient(rpcClient)
 
 	chainId, err := cli.ChainID(context.Background())
@@ -105,25 +105,25 @@ func (e EthClient) CreateContract(privatekey *ecdsa.PrivateKey, nonce uint64, am
 	return signedTx.Hash(), err
 }
 
-// 批量发送已签名的交易
+// Batch send signed transactions
 func (e EthClient) SendMultipleEthereumTx(signedTxs []*types.Transaction) ([]ethcmn.Hash, error) {
 	if len(signedTxs) == 0 {
 		return nil, fmt.Errorf("empty transaction list")
 	}
 
-	// 准备批量RPC请求
+	// Prepare batch RPC requests
 	batch := make([]rpc.BatchElem, len(signedTxs))
 	txHashes := make([]string, len(signedTxs))
 
 	for i, signedTx := range signedTxs {
-		// 将交易编码为十六进制字符串
+		// Encode transaction as hexadecimal string
 		txData, err := signedTx.MarshalBinary()
 		if err != nil {
 			return nil, fmt.Errorf("failed to marshal tx %d: %v", i, err)
 		}
 		txHex := "0x" + fmt.Sprintf("%x", txData)
 
-		// 准备批量RPC调用元素
+		// Prepare batch RPC call elements
 		batch[i] = rpc.BatchElem{
 			Method: "eth_sendRawTransaction",
 			Args:   []interface{}{txHex},
@@ -131,13 +131,13 @@ func (e EthClient) SendMultipleEthereumTx(signedTxs []*types.Transaction) ([]eth
 		}
 	}
 
-	// 执行批量RPC调用 - 这里只有一次HTTP请求！
+	// Execute batch RPC call - only one HTTP request here!
 	err := e.rpcClient.BatchCall(batch)
 	if err != nil {
 		return nil, fmt.Errorf("batch call failed: %v", err)
 	}
 
-	// 处理结果
+	// Process results
 	var resultHashes []ethcmn.Hash
 	var errors []string
 
@@ -146,7 +146,7 @@ func (e EthClient) SendMultipleEthereumTx(signedTxs []*types.Transaction) ([]eth
 			errors = append(errors, fmt.Sprintf("tx %d: %v", i, elem.Error))
 			resultHashes = append(resultHashes, ethcmn.Hash{})
 		} else {
-			// 将字符串转换为Hash
+			// Convert string to Hash
 			if txHashes[i] != "" {
 				resultHashes = append(resultHashes, ethcmn.HexToHash(txHashes[i]))
 			} else {

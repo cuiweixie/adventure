@@ -32,7 +32,7 @@ print_version(){
       done
     read -p "please enter num,choose go version:" num
 
-  #判断输入是否为数字
+  #Check if input is a number
   if echo $num | grep -q '[^0-9]';
     then
       echo "this is not a num,please enter num"

@@ -263,7 +263,7 @@ func SendTxs(client *ethclient.Client, txs []*types.Transaction) error {
 }
 func randomXen() int {
 	rand.Seed(time.Now().UnixNano())
-	//随机生成100以内的正整数
+	//Randomly generate positive integers within 100
 	//return rand.Intn(100)
 	return xenRandom
 }

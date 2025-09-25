@@ -368,7 +368,7 @@ func (m *wmtManager) runPool(poolIndex int, workIndex int, getReward bool) error
 	txpool := m.clientList[workIndex%len(m.clientList)].GetMempoolSize()
 	//m.TPSDisplay(txpool)
 	if txpool > m.threshold {
-		fmt.Println("达到阈值")
+		fmt.Println("Threshold reached")
 		return nil
 	}
 
