@@ -1,0 +1,9 @@
+{
+  "rpc": [
+    "http://127.0.0.1:8124"
+  ],
+  "accountsFilePath": "./config/devnet/addr_20000_wmt",
+  "concurrency": 1,
+  "threshold": 50000,
+  "gasPrice": 1
+}

@@ -20,4 +20,4 @@ fi
 echo "Using contract address: $CONTRACT_ADDRESS"
 
 # Execute ERC20 benchmark test
-adventure evm bench erc20 --f ./config/poly_test/fork6_erc20.json --contract $CONTRACT_ADDRESS
+adventure evm bench erc20 --f $CONFIG_FILE --contract $CONTRACT_ADDRESS
