@@ -1,0 +1,24 @@
+# OS
+.DS_Store
+*.swp
+*.swo
+.vscode
+#.idea
+# Build
+# vendor
+.vendor-new
+build
+# IDE
+.idea/
+*.iml
+vendor/*
+*.bz2
+Dockerfile
+vendor
+built-in-stubs.jar
+dev2
+*.log
+*.json
+*.db
+leveldb-*
+nohup.out
