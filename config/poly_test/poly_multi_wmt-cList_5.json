@@ -1,0 +1,10 @@
+{
+  "RPC": ["http://127.0.0.1:8123"],
+  "ContractPath": "./config/poly_test/cList_poly_5.json",
+  "SuperAcc": "5e3b90aaeec4e3d183044af82167ee799cd3ff5abdd912b9dd89b76e0fd006c4",
+  "WorkerPath": "./config/devnet/acc_pri_10_3",
+  "ParaNum": 8,
+  "SendOKTToWorker": true,
+  "Threshold": 1000,
+  "gasPrice": 9
+ }

@@ -5,6 +5,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/okex/adventure/evm/bench/celt"
+	contractdeploy "github.com/okex/adventure/evm/bench/contract-deploy"
 	"github.com/okex/adventure/evm/bench/erc20"
 	multiwmt "github.com/okex/adventure/evm/bench/multi-wmt"
 	"github.com/okex/adventure/evm/bench/operate"
@@ -41,6 +42,7 @@ func BenchCmd() *cobra.Command {
 		xen.XenRun(),
 		erc20.ERC20Cmd(),
 		erc20.ERC20InitCmd(),
+		contractdeploy.ContractDeployCmd(),
 		polybridge.PolyBridgeCmd(),
 		script.ScriptionCmd(),
 	)

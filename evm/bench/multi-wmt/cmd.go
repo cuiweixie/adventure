@@ -10,7 +10,7 @@ import (
 
 var (
 	wmtFile  = "./config/wmt.json"
-	chainID  = new(big.Int).SetUint64(1001)
+	chainID  = new(big.Int).SetUint64(901)
 	signer   = types.NewEIP155Signer(chainID)
 	gasPrice = new(big.Int).SetUint64(10000000000)
 	gasLimit = uint64(3000000)

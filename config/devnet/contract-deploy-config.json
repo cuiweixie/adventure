@@ -1,0 +1,11 @@
+{
+  "rpc": [
+    "http://localhost:8123"
+  ],
+  "tenderMint": [],
+  "concurrency": 8,
+  "threshold": 50,
+  "accountsFilePath": "./config/devnet/acc_pri_10",
+  "gasprice": 9
+}
+
