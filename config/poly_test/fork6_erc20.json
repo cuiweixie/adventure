@@ -1,6 +1,6 @@
 {
   "rpc": [
-    "http://127.0.0.1:8545"
+    "http://127.0.0.1:8123"
   ],
   "accountsFilePath": "./config/devnet/addr_20000_wmt",
   "concurrency": 20,
